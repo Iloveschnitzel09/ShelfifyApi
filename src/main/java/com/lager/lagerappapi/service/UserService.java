@@ -85,9 +85,20 @@ public class UserService {
 
     public boolean checkToken(String token, int id) {
         Optional<User> userOpt = userRepository.findById(id);
-        return userOpt.isPresent() && userOpt.get().getToken().equals(token);
+        return userOpt.isEmpty() || !userOpt.get().getToken().equals(token);
     }
 
+    public boolean checkInvite(String email, int id) {
+        userRepository.findById(id)
+                .ifPresent(user -> {
+
+                });
+        return false;
+    }
+
+    public void deleteUserData(int id) {
+        userRepository.deleteById(id);
+    }
 
     private String generateVerificationCode() {
         Random random = new Random();

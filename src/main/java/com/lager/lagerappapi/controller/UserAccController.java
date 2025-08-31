@@ -80,11 +80,7 @@ public class UserAccController {
     @PostMapping("/setEmail")
     public ResponseEntity<String> setEmail(@RequestParam String email, @RequestParam int id, @RequestParam String token) {
         try {
-            String dbToken = notificationRepo.getToken(id);
-            if (dbToken == null || !dbToken.equals(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
+            if(userService.checkToken(token, email)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
             if (!notificationRepo.checkEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -94,8 +90,21 @@ public class UserAccController {
             notificationRepo.setCode(null, id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            System.out.println("1" + e);
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/deleteAcc")
+    public ResponseEntity<String> deleteAcc(@RequestParam int id, @RequestParam String token) {
+        try {
+            if(userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+            userService.deleteUserData(id);
+
+            return ResponseEntity.ok("Benutzerkonto und alle zugehörigen Daten wurden gelöscht.");
+        } catch (Exception e) {
+            System.out.println("2" + e);
+            return ResponseEntity.badRequest().body("Fehler beim Löschen des Kontos: " + e.getMessage());
         }
     }
 

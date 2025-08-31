@@ -59,4 +59,13 @@ public class NotificationSettingsRepository {
                 userId
         );
     }
+
+    public boolean checkBlocked(String email, int id) {
+        List<String> blockedEmails = jdbcTemplate.queryForList(
+                "SELECT blocked_email FROM users u JOIN blocked_datagroups b ON u.datagroup = b.datagroup WHERE id = ?;",
+                String.class,
+                id
+        );
+        return blockedEmails.contains(email);
+    }
 }
