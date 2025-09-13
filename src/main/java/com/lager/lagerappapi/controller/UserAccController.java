@@ -80,7 +80,8 @@ public class UserAccController {
     @PostMapping("/setEmail")
     public ResponseEntity<String> setEmail(@RequestParam String email, @RequestParam int id, @RequestParam String token) {
         try {
-            if(userService.checkToken(token, email)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            System.out.println(id + " " + token);
+            if(userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
             if (!notificationRepo.checkEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();

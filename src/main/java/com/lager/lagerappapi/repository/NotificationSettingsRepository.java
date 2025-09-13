@@ -68,4 +68,12 @@ public class NotificationSettingsRepository {
         );
         return blockedEmails.contains(email);
     }
+
+    public String getDatagroup(int id) {
+        return jdbcTemplate.queryForObject(
+                "SELECT datagroup FROM users WHERE id = ?;",
+                String.class,
+                id
+        );
+    }
 }
