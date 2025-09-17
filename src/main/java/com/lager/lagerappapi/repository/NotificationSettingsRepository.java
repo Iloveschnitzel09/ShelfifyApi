@@ -33,23 +33,15 @@ public class NotificationSettingsRepository {
         );
     }
 
-    public String getEmail(int userId) {
-        return jdbcTemplate.queryForObject(
-                "SELECT email FROM users WHERE id = ?",
-                String.class,
-                userId
-        );
-    }
-
     public boolean checkEmail(String email) {
         List<String> emails = getAllNotificationEmails();
         for (String e : emails) {
             if (e != null && e.equals(email)) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     public String getToken(int userId) {

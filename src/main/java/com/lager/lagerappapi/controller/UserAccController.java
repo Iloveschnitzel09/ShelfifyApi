@@ -83,7 +83,7 @@ public class UserAccController {
             System.out.println(id + " " + token);
             if(userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-            if (!notificationRepo.checkEmail(email)) {
+            if (notificationRepo.checkEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
 

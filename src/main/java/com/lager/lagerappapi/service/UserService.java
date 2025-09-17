@@ -66,16 +66,26 @@ public class UserService {
 
     public boolean isEmailVerified(String email) {
         return userRepository.findByEmail(email)
-                .map(User::isVerified)
-                .orElse(false);
+            .map(User::isVerified)
+            .orElse(false);
     }
 
     public void setNotifyPreference(String email, boolean notify) {
         userRepository.findByEmail(email)
-                .ifPresent(user -> {
-                    user.setNotify(notify);
-                    userRepository.save(user);
-                });
+            .ifPresent(user -> {
+                user.setNotify(notify);
+                userRepository.save(user);
+            });
+    }
+
+    public String getEmail(int id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(User::getEmail).orElse(null);
+    }
+
+    public int getId(String Email) {
+        Optional<User> userOpt = userRepository.findByEmail(Email);
+        return userOpt.map(User::getId).orElse(-1);
     }
 
     public boolean checkToken(String token, String email) {
@@ -96,6 +106,14 @@ public class UserService {
         return false;
     }
 
+    public void setDatagroup(int id, String datagroup) {
+        userRepository.findById(id)
+            .ifPresent(user -> {
+                user.setDatagroup(datagroup);
+                userRepository.save(user);
+            });
+    }
+
     public void deleteUserData(int id) {
         userRepository.deleteById(id);
     }
@@ -108,4 +126,5 @@ public class UserService {
         }
         return code.toString();
     }
+
 } 

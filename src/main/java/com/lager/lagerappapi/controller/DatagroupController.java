@@ -6,6 +6,7 @@ import com.lager.lagerappapi.service.EmailService;
 import com.lager.lagerappapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,16 +25,22 @@ public class DatagroupController {
     @Autowired
     EmailService  emailService;
 
+
+    @PostMapping("/inviteToDatagroup")
     public ResponseEntity<String> inviteToDatagroup(@RequestParam String email, @RequestParam int id, @RequestParam String token) {
         if (userService.checkToken(token, id) || notificationRepo.checkBlocked(email, id) || notificationRepo.checkEmail(email)) return ResponseEntity.status(401).build();
         emailService.sendSimpleEmail(email, "Einladung zur Datengruppe",
-                "Du wurdest eingeladen, der Datengruppe beizutreten. Klicke auf den Link, um beizutreten: https://lagerapp.de/invite?datagroup="
-                + notificationRepo.getDatagroup(id));
-        return ResponseEntity.ok("User invited to datagroup");
+                "Du wurdest eingeladen, der Datengruppe beizutreten. Klicke auf den Link, um beizutreten: <a href=\"shelfify://invite?datagroup=" +
+                        notificationRepo.getDatagroup(id) +
+                        "\">Jetzt in der App öffnen</a>\n");
+        return ResponseEntity.ok("Invitation sent");
     }
 
-    public ResponseEntity<String> joinDatagroup(@RequestParam int id, @RequestParam String token, @RequestParam String datagroup) {
-
+    @PostMapping("/joinDatagroup")
+    public ResponseEntity<String> joinDatagroup(@RequestParam String email, @RequestParam String token, @RequestParam String datagroup) {
+        int id = userService.getId(email);
+        if (userService.checkToken(token, email) || notificationRepo.checkBlocked(email, id)) return ResponseEntity.status(401).build();
+        userService.setDatagroup(id, datagroup);
         return ResponseEntity.ok("User joined datagroup");
     }
 }
