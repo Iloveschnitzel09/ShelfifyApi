@@ -1,4 +1,4 @@
-package com.lager.lagerappapi;
+package com.shelfify.shelfifyapi;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -12,15 +12,15 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 
 @EnableScheduling
-@SpringBootApplication(scanBasePackages = "com.lager.lagerappapi")
+@SpringBootApplication(scanBasePackages = "com.shelfify.shelfifyapi")
 @EnableJpaRepositories(basePackages = {
-		"com.lager.lagerappapi.repository",
-		"com.lager.lagerappapi.ean"
+        "com.shelfify.shelfifyapi.repository",
+        "com.shelfify.shelfifyapi.ean"
 })
-@EntityScan(basePackages = "com.lager.lagerappapi")
-public class LagerAppApiApplication {
+@EntityScan(basePackages = "com.lager.shelfifyapi")
+public class ShelfifyApiApplication {
 	public static void main(String[] args) {
-		SpringApplication.run(LagerAppApiApplication.class, args);
+		SpringApplication.run(ShelfifyApiApplication.class, args);
 	}
 
 	@Bean

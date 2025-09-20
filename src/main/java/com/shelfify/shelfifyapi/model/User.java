@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.model;
+package com.shelfify.shelfifyapi.model;
 
 import jakarta.persistence.*;
 

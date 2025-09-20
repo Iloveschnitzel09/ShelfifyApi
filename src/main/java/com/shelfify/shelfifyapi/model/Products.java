@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.model;
+package com.shelfify.shelfifyapi.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -8,9 +8,9 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 @Entity
-@IdClass(ProduktKey.class)
+@IdClass(ProductKey.class)
 @Table(name = "lebensmittel")
-public class Produkte {
+public class Products {
 
     @Id
     private String produktname;

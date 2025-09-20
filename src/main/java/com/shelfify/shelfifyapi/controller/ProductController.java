@@ -1,11 +1,11 @@
-package com.lager.lagerappapi.controller;
+package com.shelfify.shelfifyapi.controller;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lager.lagerappapi.ean.EanMapping;
-import com.lager.lagerappapi.ean.EanMappingRepository;
-import com.lager.lagerappapi.model.Produkte;
-import com.lager.lagerappapi.repository.ProduktRepository;
+import com.shelfify.shelfifyapi.ean.EanMapping;
+import com.shelfify.shelfifyapi.ean.EanMappingRepository;
+import com.shelfify.shelfifyapi.model.Products;
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Scanner;
 
 @RestController
-public class ProduktController {
+public class ProductController {
 
     private final ProduktRepository produktRepository;
     private final EanMappingRepository eanMappingRepository;
@@ -32,13 +32,13 @@ public class ProduktController {
     @Autowired
     private DataSource dataSource;
 
-    public ProduktController(ProduktRepository produktRepository, EanMappingRepository eanMappingRepository) {
+    public ProductController(ProduktRepository produktRepository, EanMappingRepository eanMappingRepository) {
         this.produktRepository = produktRepository;
         this.eanMappingRepository = eanMappingRepository;
     }
 
     @GetMapping("/products")
-    public List<Produkte> getAllProducts() {
+    public List<Products> getAllProducts() {
         return produktRepository.findAll(
                 Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum"))
         );
@@ -46,7 +46,7 @@ public class ProduktController {
 
 
     @GetMapping("/spoiledProducts")
-    public List<Produkte> getSpoiledProducts(@RequestParam(defaultValue = "10") int days) {
+    public List<Products> getSpoiledProducts(@RequestParam(defaultValue = "10") int days) {
         LocalDate cutoffDate = LocalDate.now().plusDays(days);
         return produktRepository.findByAblaufdatumBefore(cutoffDate);
     }

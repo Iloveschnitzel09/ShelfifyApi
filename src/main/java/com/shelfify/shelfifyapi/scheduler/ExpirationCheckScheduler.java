@@ -1,8 +1,8 @@
-package com.lager.lagerappapi.scheduler;
+package com.shelfify.shelfifyapi.scheduler;
 
-import com.lager.lagerappapi.model.Produkte;
-import com.lager.lagerappapi.repository.ProduktRepository;
-import com.lager.lagerappapi.service.EmailService;
+import com.shelfify.shelfifyapi.model.Products;
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
+import com.shelfify.shelfifyapi.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,10 +26,10 @@ public class ExpirationCheckScheduler {
         LocalDate sevenDaysFromNow = today.plusDays(7);
         
         // Bereits abgelaufene Produkte
-        List<Produkte> expiredProducts = produktRepo.findByAblaufdatumBefore(today);
+        List<Products> expiredProducts = produktRepo.findByAblaufdatumBefore(today);
         
         // Produkte die in den nächsten 7 Tagen ablaufen
-        List<Produkte> expiringProducts = produktRepo.findByAblaufdatumBetween(today, sevenDaysFromNow);
+        List<Products> expiringProducts = produktRepo.findByAblaufdatumBetween(today, sevenDaysFromNow);
         
         if (!expiredProducts.isEmpty() || !expiringProducts.isEmpty()) {
             emailService.sendExpirationAlert(expiredProducts, expiringProducts);

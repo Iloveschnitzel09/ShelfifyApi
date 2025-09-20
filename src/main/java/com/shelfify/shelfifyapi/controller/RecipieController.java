@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.controller;
+package com.shelfify.shelfifyapi.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

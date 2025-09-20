@@ -1,7 +1,7 @@
-package com.lager.lagerappapi.service;
+package com.shelfify.shelfifyapi.service;
 
-import com.lager.lagerappapi.model.Produkte;
-import com.lager.lagerappapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.model.Products;
+import com.shelfify.shelfifyapi.repository.UserRepository;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,7 +102,7 @@ public class EmailService {
                 });
     }
 
-    public void sendExpirationAlert(List<Produkte> expiredProducts, List<Produkte> expiringProducts) {
+    public void sendExpirationAlert(List<Products> expiredProducts, List<Products> expiringProducts) {
         // Erstelle den E-Mail-Text
         StringBuilder body = new StringBuilder();
 
@@ -111,7 +111,7 @@ public class EmailService {
             body.append("ABGELAUFENE PRODUKTE:\n");
             body.append("====================\n\n");
 
-            for (Produkte product : expiredProducts) {
+            for (Products product : expiredProducts) {
                 body.append(String.format("- %s (Menge: %d) ist am %s abgelaufen\n",
                     product.getProduktname(),
                     product.getMenge(),
@@ -125,7 +125,7 @@ public class EmailService {
             body.append("BALD ABLAUFENDE PRODUKTE:\n");
             body.append("========================\n\n");
 
-            for (Produkte product : expiringProducts) {
+            for (Products product : expiringProducts) {
                 body.append(String.format("- %s (Menge: %d) läuft am %s ab\n",
                     product.getProduktname(),
                     product.getMenge(),

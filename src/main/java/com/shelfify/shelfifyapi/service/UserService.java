@@ -1,7 +1,7 @@
-package com.lager.lagerappapi.service;
+package com.shelfify.shelfifyapi.service;
 
-import com.lager.lagerappapi.model.User;
-import com.lager.lagerappapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.model.User;
+import com.shelfify.shelfifyapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;

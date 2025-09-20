@@ -1,9 +1,9 @@
-package com.lager.lagerappapi.controller;
+package com.shelfify.shelfifyapi.controller;
 
-import com.lager.lagerappapi.repository.NotificationSettingsRepository;
-import com.lager.lagerappapi.repository.UserRepository;
-import com.lager.lagerappapi.scheduler.ExpirationCheckScheduler;
-import com.lager.lagerappapi.service.UserService;
+import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
+import com.shelfify.shelfifyapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.scheduler.ExpirationCheckScheduler;
+import com.shelfify.shelfifyapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;

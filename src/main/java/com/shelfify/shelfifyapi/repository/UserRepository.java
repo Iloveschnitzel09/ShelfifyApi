@@ -1,6 +1,6 @@
-package com.lager.lagerappapi.repository;
+package com.shelfify.shelfifyapi.repository;
 
-import com.lager.lagerappapi.model.User;
+import com.shelfify.shelfifyapi.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

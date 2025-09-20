@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.ean;
+package com.shelfify.shelfifyapi.ean;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

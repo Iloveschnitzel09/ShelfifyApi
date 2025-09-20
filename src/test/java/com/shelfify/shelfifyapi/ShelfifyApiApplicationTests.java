@@ -1,10 +1,10 @@
-package com.lager.lagerappapi;
+package com.shelfify.shelfifyapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LagerAppApiApplicationTests {
+class ShelfifyApiApplicationTests {
 
 	@Test
 	void contextLoads() {

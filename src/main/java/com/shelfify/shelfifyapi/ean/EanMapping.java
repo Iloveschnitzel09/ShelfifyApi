@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.ean;
+package com.shelfify.shelfifyapi.ean;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
