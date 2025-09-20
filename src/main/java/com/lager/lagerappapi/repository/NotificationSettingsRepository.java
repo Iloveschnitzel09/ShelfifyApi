@@ -26,6 +26,13 @@ public class NotificationSettingsRepository {
         );
     }
 
+    public List<String> getAllEmails() {
+        return jdbcTemplate.queryForList(
+                "SELECT email FROM users WHERE email IS NOT NULL",
+                String.class
+        );
+    }
+
     public void setCode(String code, int id) {
         jdbcTemplate.update(
                 "UPDATE users SET verification_code = ? WHERE id = ?",
@@ -34,13 +41,12 @@ public class NotificationSettingsRepository {
     }
 
     public boolean checkEmail(String email) {
-        List<String> emails = getAllNotificationEmails();
+        List<String> emails = getAllEmails();
         for (String e : emails) {
-            if (e != null && e.equals(email)) {
+            if (e != null && e.equalsIgnoreCase(email)) {
                 return true;
             }
         }
-
         return false;
     }
 

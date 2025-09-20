@@ -2,9 +2,11 @@ package com.lager.lagerappapi.controller;
 
 import com.lager.lagerappapi.repository.NotificationSettingsRepository;
 import com.lager.lagerappapi.repository.UserRepository;
+import com.lager.lagerappapi.service.DatagroupService;
 import com.lager.lagerappapi.service.EmailService;
 import com.lager.lagerappapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,21 +27,33 @@ public class DatagroupController {
     @Autowired
     EmailService  emailService;
 
+    @Autowired
+    DatagroupService datagroupService;
 
     @PostMapping("/inviteToDatagroup")
-    public ResponseEntity<String> inviteToDatagroup(@RequestParam String email, @RequestParam int id, @RequestParam String token) {
-        if (userService.checkToken(token, id) || notificationRepo.checkBlocked(email, id) || notificationRepo.checkEmail(email)) return ResponseEntity.status(401).build();
-        emailService.sendSimpleEmail(email, "Einladung zur Datengruppe",
-                "Du wurdest eingeladen, der Datengruppe beizutreten. Klicke auf den Link, um beizutreten: <a href=\"shelfify://invite?datagroup=" +
-                        notificationRepo.getDatagroup(id) +
-                        "\">Jetzt in der App öffnen</a>\n");
+    public ResponseEntity<String> inviteToDatagroup(@RequestParam int id, @RequestParam String token, @RequestParam String email) {
+        System.out.println("inviteToDatagroup" + id + " " + token + " " + email);
+        if (userService.checkToken(token, id)) {
+            return ResponseEntity.status(300).build(); // Token ungültig
+        } else if (notificationRepo.checkBlocked(email, id)) {
+            return ResponseEntity.status(303).build(); // E-Mail blockiert
+        } else if (!notificationRepo.checkEmail(email)) {
+            return ResponseEntity.status(330).build(); // E-Mail schon vorhanden
+        }
+        String invCode = datagroupService.createInvitationCode(notificationRepo.getDatagroup(id));
+        emailService.sendSimpleEmail(email, "Einladung zur Datengruppe", invCode);
         return ResponseEntity.ok("Invitation sent");
     }
 
     @PostMapping("/joinDatagroup")
-    public ResponseEntity<String> joinDatagroup(@RequestParam String email, @RequestParam String token, @RequestParam String datagroup) {
-        int id = userService.getId(email);
-        if (userService.checkToken(token, email) || notificationRepo.checkBlocked(email, id)) return ResponseEntity.status(401).build();
+    public ResponseEntity<String> joinDatagroup(@RequestParam int id, @RequestParam String token, @RequestParam String code) {
+        System.out.println("joinDatagroup" + id + " " + token + " " + code);
+        String email = userService.getEmail(id);
+        if(userService.checkToken(token, id) || notificationRepo.checkBlocked(email, id) || !notificationRepo.checkEmail(email)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String datagroup = datagroupService.getDatagroupByCode(code);
+        if (datagroup == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         userService.setDatagroup(id, datagroup);
         return ResponseEntity.ok("User joined datagroup");
     }

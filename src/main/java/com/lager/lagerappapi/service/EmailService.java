@@ -2,10 +2,12 @@ package com.lager.lagerappapi.service;
 
 import com.lager.lagerappapi.model.Produkte;
 import com.lager.lagerappapi.repository.UserRepository;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
@@ -66,17 +68,34 @@ public class EmailService {
         return mailSender;
     }
 
-    public void sendSimpleEmail(String to, String subject, String text) {
+    public void sendSimpleEmail(String to, String subject, String invCode) {
         // Überprüfe, ob der Benutzer verifiziert ist und Benachrichtigungen aktiviert hat
         userRepository.findByEmail(to)
-                .filter(user -> user.isVerified() && user.isNotify())
+//                .filter(user -> user.isVerified() && user.isNotify())
                 .ifPresent(user -> {
                     try {
-                        SimpleMailMessage message = new SimpleMailMessage();
-                        message.setTo(to);
-                        message.setSubject(subject);
-                        message.setText(text);
-                        getMailSender().send(message);
+                        MimeMessage mimeMessage = getMailSender().createMimeMessage();
+                        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+                        helper.setTo(to);
+                        helper.setSubject(subject);
+
+                        String html = "<p>Hallo,</p>"
+                                + "<p>du wurdest eingeladen, einer Datengruppe in Shelfify beizutreten.</p>"
+                                + "<p>Bitte öffne die Shelfify-App und gib folgenden Einladungscode innerhalb von 5 Minuten ein:</p>"
+                                + "<p style=\"font-size:18px; font-weight:bold; color:#2c3e50;\">" + invCode + "</p>"
+                                + "<p>So funktioniert’s:</p>"
+                                + "<ol>"
+                                + "  <li>Shelfify-App öffnen</li>"
+                                + "  <li>Zum Bereich <b>Datengruppe beitreten</b> gehen</li>"
+                                + "  <li>Den obigen Einladungscode einfügen</li>"
+                                + "</ol>"
+                                + "<p>Viele Grüße,<br/>Dein Shelfify-Team</p>";
+
+
+                        helper.setText(html, true); // true = HTML
+                        getMailSender().send(mimeMessage);
+
                     } catch (Exception e) {
                         throw new RuntimeException("Fehler beim E-Mail-Versand: " + e.getMessage());
                     }
@@ -86,28 +105,28 @@ public class EmailService {
     public void sendExpirationAlert(List<Produkte> expiredProducts, List<Produkte> expiringProducts) {
         // Erstelle den E-Mail-Text
         StringBuilder body = new StringBuilder();
-        
+
         // Bereits abgelaufene Produkte
         if (!expiredProducts.isEmpty()) {
             body.append("ABGELAUFENE PRODUKTE:\n");
             body.append("====================\n\n");
-            
+
             for (Produkte product : expiredProducts) {
-                body.append(String.format("- %s (Menge: %d) ist am %s abgelaufen\n", 
+                body.append(String.format("- %s (Menge: %d) ist am %s abgelaufen\n",
                     product.getProduktname(),
-                    product.getMenge(), 
+                    product.getMenge(),
                     product.getAblaufdatum().toString()));
             }
             body.append("\n");
         }
-        
+
         // Bald ablaufende Produkte
         if (!expiringProducts.isEmpty()) {
             body.append("BALD ABLAUFENDE PRODUKTE:\n");
             body.append("========================\n\n");
-            
+
             for (Produkte product : expiringProducts) {
-                body.append(String.format("- %s (Menge: %d) läuft am %s ab\n", 
+                body.append(String.format("- %s (Menge: %d) läuft am %s ab\n",
                     product.getProduktname(),
                     product.getMenge(),
                     product.getAblaufdatum().toString()));
@@ -115,7 +134,7 @@ public class EmailService {
         }
 
         String messageText = body.toString();
-        
+
         // Sende nur an verifizierte Benutzer mit aktivierten Benachrichtigungen
         userRepository.findAll().stream()
             .filter(user -> user.isVerified() && user.isNotify())
