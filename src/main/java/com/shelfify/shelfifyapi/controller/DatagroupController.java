@@ -38,7 +38,7 @@ public class DatagroupController {
         } else if (notificationRepo.checkBlocked(email, id)) {
             return ResponseEntity.status(303).build(); // E-Mail blockiert
         } else if (!notificationRepo.checkEmail(email)) {
-            return ResponseEntity.status(330).build(); // E-Mail schon vorhanden
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // E-Mail schon vorhanden
         }
         String invCode = datagroupService.createInvitationCode(notificationRepo.getDatagroup(id));
         emailService.sendSimpleEmail(email, "Einladung zur Datengruppe", invCode);

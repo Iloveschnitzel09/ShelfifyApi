@@ -3,6 +3,7 @@ package com.shelfify.shelfifyapi.service;
 import com.shelfify.shelfifyapi.model.User;
 import com.shelfify.shelfifyapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${spring.mail.username}")
+    private String username;
 
     public void sendVerificationCode(String email) {
         // Generiere einen 6-stelligen Code
@@ -37,6 +41,7 @@ public class UserService {
     private void sendVerificationEmail(String email, String code) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(username);
             message.setTo(email);
             message.setSubject("Ihr Verifizierungscode für die LagerApp");
             message.setText(String.format(

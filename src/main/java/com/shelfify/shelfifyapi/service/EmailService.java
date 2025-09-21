@@ -77,6 +77,7 @@ public class EmailService {
                         MimeMessage mimeMessage = getMailSender().createMimeMessage();
                         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
+                        helper.setFrom(username);
                         helper.setTo(to);
                         helper.setSubject(subject);
 
@@ -141,6 +142,7 @@ public class EmailService {
             .forEach(user -> {
                 try {
                     SimpleMailMessage message = new SimpleMailMessage();
+                    message.setFrom("IloveSchnitzel09@gmx.de");
                     message.setTo(user.getEmail());
                     message.setSubject("Produktablauf-Benachrichtigung");
                     message.setText(messageText);

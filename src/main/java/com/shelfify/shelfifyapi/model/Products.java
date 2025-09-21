@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 @Entity
 @IdClass(ProductKey.class)
-@Table(name = "lebensmittel")
+@Table(name = "products")
 public class Products {
 
     @Id
