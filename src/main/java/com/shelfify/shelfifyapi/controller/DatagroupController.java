@@ -57,4 +57,12 @@ public class DatagroupController {
         userService.setDatagroup(id, datagroup);
         return ResponseEntity.ok("User joined datagroup");
     }
+
+    @PostMapping("/leaveDatagroup")
+    public ResponseEntity<String> leaveDatagroup(@RequestParam int id, @RequestParam String token) {
+        System.out.println("leaveDatagroup" + id + " " + token);
+        if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        userService.leaveDatagroup(id);
+        return ResponseEntity.ok("User left datagroup");
+    }
 }

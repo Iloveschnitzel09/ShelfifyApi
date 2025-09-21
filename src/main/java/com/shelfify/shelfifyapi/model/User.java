@@ -24,6 +24,9 @@ public class User {
 
     private String token;
 
+    @Column(name = "own_datagroup")
+    private String ownDatagroup;
+
     // Getter und Setter
     public Integer getId() {
         return id;
@@ -79,5 +82,13 @@ public class User {
 
     public String getToken() {
         return token;
+    }
+
+    public String getOwnDatagroup() {
+        return ownDatagroup;
+    }
+
+    public void setOwnDatagroup(String last_datagroup) {
+        this.ownDatagroup = last_datagroup;
     }
 } 

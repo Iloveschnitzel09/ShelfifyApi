@@ -114,6 +114,17 @@ public class UserService {
             });
     }
 
+    public void leaveDatagroup(int id) {
+        userRepository.findById(id)
+            .ifPresent(user -> {
+                String own = user.getOwnDatagroup();
+                if (own.equals(user.getDatagroup())) return;
+                user.setDatagroup(own);
+                userRepository.save(user);
+            });
+
+    }
+
     public void deleteUserData(int id) {
         userRepository.deleteById(id);
     }

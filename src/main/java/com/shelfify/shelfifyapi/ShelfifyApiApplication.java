@@ -17,7 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
         "com.shelfify.shelfifyapi.repository",
         "com.shelfify.shelfifyapi.ean"
 })
-@EntityScan(basePackages = "com.lager.shelfifyapi")
+@EntityScan(basePackages = "com.shelfify.shelfifyapi")
 public class ShelfifyApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ShelfifyApiApplication.class, args);
