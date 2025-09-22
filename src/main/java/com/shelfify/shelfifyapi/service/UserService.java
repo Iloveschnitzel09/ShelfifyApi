@@ -119,6 +119,11 @@ public class UserService {
             });
     }
 
+    public String getDatagroup(int id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(User::getDatagroup).orElse("");
+    }
+
     public void leaveDatagroup(int id) {
         userRepository.findById(id)
             .ifPresent(user -> {

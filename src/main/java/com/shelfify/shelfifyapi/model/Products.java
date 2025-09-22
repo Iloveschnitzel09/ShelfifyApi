@@ -20,7 +20,7 @@ public class Products {
     @Id
     private LocalDate ablaufdatum;
 
-    // Getter und Setter
+    private String datagroup;
 
     public String getProduktname() {
         return produktname;
@@ -40,6 +40,14 @@ public class Products {
 
     public LocalDate getAblaufdatum() {
         return ablaufdatum;
+    }
+
+    public String getDatagroup() {
+        return datagroup;
+    }
+
+    public void setDatagroup(String datagroup) {
+        this.datagroup = datagroup;
     }
 
 }

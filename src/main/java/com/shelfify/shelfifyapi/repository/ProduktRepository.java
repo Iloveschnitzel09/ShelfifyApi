@@ -11,10 +11,10 @@ import java.util.List;
 
 public interface ProduktRepository extends JpaRepository<Products, Long> {
 
-    List<Products> findAll(Sort sort);
+    List<Products> findProductsByDatagroup(String datagroup, Sort sort);
 
-    List<Products> findByAblaufdatumBefore(LocalDate cutoffDate);
+    List<Products> findByAblaufdatumBeforeAndDatagroup(LocalDate cutoffDate, String datagroup);
 
-    List<Products> findByAblaufdatumBetween(LocalDate startDate, LocalDate endDate);
+    List<Products> findByAblaufdatumBetweenAndDatagroup(LocalDate startDate, LocalDate endDate, String datagroup);
 
 }

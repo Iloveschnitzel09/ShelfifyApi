@@ -6,6 +6,8 @@ import com.shelfify.shelfifyapi.ean.EanMapping;
 import com.shelfify.shelfifyapi.ean.EanMappingRepository;
 import com.shelfify.shelfifyapi.model.Products;
 import com.shelfify.shelfifyapi.repository.ProduktRepository;
+import com.shelfify.shelfifyapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -26,29 +28,36 @@ import java.util.Scanner;
 @RestController
 public class ProductController {
 
-    private final ProduktRepository produktRepository;
-    private final EanMappingRepository eanMappingRepository;
+    @Autowired
+    private ProduktRepository produktRepository;
+
+    @Autowired
+    private EanMappingRepository eanMappingRepository;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private DataSource dataSource;
 
-    public ProductController(ProduktRepository produktRepository, EanMappingRepository eanMappingRepository) {
-        this.produktRepository = produktRepository;
-        this.eanMappingRepository = eanMappingRepository;
-    }
-
     @GetMapping("/products")
-    public List<Products> getAllProducts() {
-        return produktRepository.findAll(
+    public List<Products> getAllProducts(@RequestParam int id, @RequestParam String token) {
+        if (userService.checkToken(token, id)) return null;
+        return produktRepository.findProductsByDatagroup(
+                userService.getDatagroup(id),
                 Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum"))
         );
     }
 
 
     @GetMapping("/spoiledProducts")
-    public List<Products> getSpoiledProducts(@RequestParam(defaultValue = "10") int days) {
+    public List<Products> getSpoiledProducts(@RequestParam(defaultValue = "10") int days, @RequestParam int id, @RequestParam String token) {
+        if (userService.checkToken(token, id)) return null;
+
         LocalDate cutoffDate = LocalDate.now().plusDays(days);
-        return produktRepository.findByAblaufdatumBefore(cutoffDate);
+        return produktRepository.findByAblaufdatumBeforeAndDatagroup(
+                cutoffDate,
+                userService.getDatagroup(id));
     }
 
     @GetMapping("/lookupProductName")
