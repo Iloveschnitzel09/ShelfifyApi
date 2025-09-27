@@ -16,9 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class DatagroupController {
 
     @Autowired
-    UserRepository userRepository;
-
-    @Autowired
     UserService userService;
 
     @Autowired
