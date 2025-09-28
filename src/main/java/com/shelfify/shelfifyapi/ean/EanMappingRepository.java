@@ -7,6 +7,7 @@ import java.util.Optional;
 
 @Repository
 public interface EanMappingRepository extends JpaRepository<EanMapping, Long> {
-    Optional<EanMapping> findByEanAndDatagroup(String ean, String datagroup);
+    Optional<EanMapping> findByEan(String ean);
+    // AndDatagroup(String ean, String datagroup);
 }
 

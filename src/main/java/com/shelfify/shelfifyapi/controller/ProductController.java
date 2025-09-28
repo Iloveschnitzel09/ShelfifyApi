@@ -63,13 +63,13 @@ public class ProductController {
 
     // TODO: Need to be converted to work with datagroups
     @GetMapping("/lookupProductName")
-    public ResponseEntity<String> lookupProductName(@RequestParam String ean) {
+    public ResponseEntity<String> lookupProductName(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
         try {
-            return eanMappingRepository.findByEanAndDatagroup(ean, "global")
+            return eanMappingRepository.findByEan(ean)
                     .map(mapping -> ResponseEntity.ok(mapping.getProductName()))
                     .orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fehler bei der Produktabfrage.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -95,13 +95,14 @@ public class ProductController {
 
     @PostMapping("/addProduct")
     public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token) {
+        System.out.println("addProduct " + name + " " + ablaufdatum + " " + id + " " + token);
         if (userService.checkToken(token, id)) return null;
         String datagroup = userService.getDatagroup(id);
-
+        System.out.println("datagroup");
         try (Connection connection = dataSource.getConnection()) {
             java.sql.Date sqlDate = java.sql.Date.valueOf(ablaufdatum);
 
-            String checkQuery = "SELECT menge FROM lebensmittel WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
+            String checkQuery = "SELECT menge FROM products WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
             PreparedStatement pstmt = connection.prepareStatement(checkQuery);
             pstmt.setString(1, name);
             pstmt.setDate(2, sqlDate);
@@ -111,7 +112,7 @@ public class ProductController {
             if (rs.next()) {
                 int currentMenge = rs.getInt("menge");
                 PreparedStatement updateStmt = connection.prepareStatement(
-                        "UPDATE lebensmittel SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?");
+                        "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?");
                 updateStmt.setInt(1, currentMenge + 1);
                 updateStmt.setString(2, name);
                 updateStmt.setDate(3, sqlDate);
@@ -120,7 +121,7 @@ public class ProductController {
                 return ResponseEntity.ok("Produktmenge für " + name + " wurde aktualisiert.");
             } else {
                 PreparedStatement insertStmt = connection.prepareStatement(
-                        "INSERT INTO lebensmittel (produktname, menge, ablaufdatum, datagroup) VALUES (?, ?, ?, ?)");
+                        "INSERT INTO products (produktname, menge, ablaufdatum, datagroup) VALUES (?, ?, ?, ?)");
                 insertStmt.setString(1, name);
                 insertStmt.setInt(2, 1);
                 insertStmt.setDate(3, sqlDate);
@@ -129,13 +130,15 @@ public class ProductController {
                 return ResponseEntity.ok("Produkt " + name + " wurde hinzugefügt.");
             }
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fehler: " + e.getMessage());
         }
     }
 
     // TODO: Need to be converted to work with datagroups
     @PostMapping("/addEAN")
-    public ResponseEntity<String> addEAN(@RequestParam String ean, @RequestParam String name) {
+    public ResponseEntity<String> addEAN(@RequestParam String ean, @RequestParam String name, @RequestParam int id, @RequestParam String token) {
+        System.out.println("addEAN " + ean + " " + name + " " + id + " " + token);
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement insertStmt = connection.prepareStatement(
                     "INSERT INTO ean_mapping (ean, product_name) VALUES (?, ?)");
@@ -156,16 +159,20 @@ public class ProductController {
     @DeleteMapping("/removeProduct")
     public ResponseEntity<String> removeProduct(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
         if (userService.checkToken(token, id)) return null;
-        ResponseEntity<String> lookupResponse = lookupProductName(ean);
-        String name = lookupResponse.getBody();
-        String datagroup = userService.getDatagroup(id);
+        System.out.println("removeProduct " + ean + " " + id + " " + token);
+        String name = eanMappingRepository.findByEan(ean)
+                .map(EanMapping::getProductName)
+                .orElse(null);
 
-        if (lookupResponse.getStatusCode() != HttpStatus.OK || name == null || name.isEmpty()) {
+        String datagroup = userService.getDatagroup(id);
+        System.out.println("datagroup" + datagroup + "  name " + name);
+
+        if (name == null || name.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname konnte nicht gefunden werden.");
         }
 
         try (Connection connection = dataSource.getConnection()) {
-            String checkQuery = "SELECT menge, ablaufdatum FROM lebensmittel WHERE produktname = ? AND datagroup = ? ORDER BY ablaufdatum ASC LIMIT 1";
+            String checkQuery = "SELECT menge, ablaufdatum FROM products WHERE produktname = ? AND datagroup = ? ORDER BY ablaufdatum ASC LIMIT 1";
             PreparedStatement pstmt = connection.prepareStatement(checkQuery);
             pstmt.setString(1, name);
             pstmt.setString(2, datagroup);
@@ -176,7 +183,7 @@ public class ProductController {
                 String ablaufdatum = rs.getString("ablaufdatum");
 
                 if (menge > 1) {
-                    String updateQuery = "UPDATE lebensmittel SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
+                    String updateQuery = "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
                     try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
                         updateStmt.setInt(1, menge - 1);
                         updateStmt.setString(2, name);
@@ -186,7 +193,7 @@ public class ProductController {
                     }
                     return ResponseEntity.ok("Menge für Produkt " + name + " wurde um 1 reduziert.");
                 } else {
-                    String deleteQuery = "DELETE FROM lebensmittel WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
+                    String deleteQuery = "DELETE FROM products WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
                     try (PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery)) {
                         deleteStmt.setString(1, name);
                         deleteStmt.setString(2, ablaufdatum);
@@ -199,6 +206,7 @@ public class ProductController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Kein Produkt mit diesem Namen gefunden.");
             }
         } catch (SQLException e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fehler beim Entfernen des Produkts: " + e.getMessage());
         }
     }
