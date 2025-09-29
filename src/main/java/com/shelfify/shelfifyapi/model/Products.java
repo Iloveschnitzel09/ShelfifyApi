@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.model;
+package com.shelfify.shelfifyapi.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -8,9 +8,9 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 @Entity
-@IdClass(ProduktKey.class)
-@Table(name = "lebensmittel")
-public class Produkte {
+@IdClass(ProductKey.class)
+@Table(name = "products")
+public class Products {
 
     @Id
     private String produktname;
@@ -20,7 +20,7 @@ public class Produkte {
     @Id
     private LocalDate ablaufdatum;
 
-    // Getter und Setter
+    private String datagroup;
 
     public String getProduktname() {
         return produktname;
@@ -40,6 +40,14 @@ public class Produkte {
 
     public LocalDate getAblaufdatum() {
         return ablaufdatum;
+    }
+
+    public String getDatagroup() {
+        return datagroup;
+    }
+
+    public void setDatagroup(String datagroup) {
+        this.datagroup = datagroup;
     }
 
 }

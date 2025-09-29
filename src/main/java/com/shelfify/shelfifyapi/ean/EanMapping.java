@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.ean;
+package com.shelfify.shelfifyapi.ean;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,10 +10,12 @@ import jakarta.persistence.Table;
 public class EanMapping {
 
     @Id
-    private String ean; // EAN wird als Primärschlüssel benutzt
+    private String ean;
 
     @Column(name = "product_name")
     private String productName;
+
+    private String datagroup;
 
     // Getter und Setter
     public String getEan() {
@@ -30,6 +32,14 @@ public class EanMapping {
 
     public void setProductName(String productName) {
         this.productName = productName;
+    }
+
+    public String getDatagroup() {
+        return datagroup;
+    }
+
+    public void setDatagroup(String datagroup) {
+        this.datagroup = datagroup;
     }
 }
 

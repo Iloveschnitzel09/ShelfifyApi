@@ -1,9 +1,9 @@
-package com.lager.lagerappapi.controller;
+package com.shelfify.shelfifyapi.controller;
 
-import com.lager.lagerappapi.repository.NotificationSettingsRepository;
-import com.lager.lagerappapi.repository.UserRepository;
-import com.lager.lagerappapi.scheduler.ExpirationCheckScheduler;
-import com.lager.lagerappapi.service.UserService;
+import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
+import com.shelfify.shelfifyapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.scheduler.ExpirationCheckScheduler;
+import com.shelfify.shelfifyapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -45,11 +45,13 @@ public class UserAccController {
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbc.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(
-                            "INSERT INTO users (email, notify, datagroup, verified, token) VALUES (NULL, FALSE, ?, FALSE, ?)",
+                            "INSERT INTO users (email, notify, datagroup, verified, token, own_datagroup) VALUES (NULL, FALSE, ?, FALSE, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS
                 );
-                ps.setString(1, UUID.randomUUID().toString()); // ← Datagroup generieren
-                ps.setString(2, token); // ← Token korrekt setzen
+                String datagroup = UUID.randomUUID().toString();
+                ps.setString(1, datagroup);
+                ps.setString(2, token);
+                ps.setString(3, datagroup);
                 return ps;
             }, keyHolder);
 
@@ -83,7 +85,7 @@ public class UserAccController {
             System.out.println(id + " " + token);
             if(userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-            if (!notificationRepo.checkEmail(email)) {
+            if (notificationRepo.checkEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
 

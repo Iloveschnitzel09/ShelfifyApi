@@ -1,8 +1,9 @@
-package com.lager.lagerappapi.service;
+package com.shelfify.shelfifyapi.service;
 
-import com.lager.lagerappapi.model.User;
-import com.lager.lagerappapi.repository.UserRepository;
+import com.shelfify.shelfifyapi.model.User;
+import com.shelfify.shelfifyapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${spring.mail.username}")
+    private String username;
 
     public void sendVerificationCode(String email) {
         // Generiere einen 6-stelligen Code
@@ -37,6 +41,7 @@ public class UserService {
     private void sendVerificationEmail(String email, String code) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(username);
             message.setTo(email);
             message.setSubject("Ihr Verifizierungscode für die LagerApp");
             message.setText(String.format(
@@ -66,16 +71,26 @@ public class UserService {
 
     public boolean isEmailVerified(String email) {
         return userRepository.findByEmail(email)
-                .map(User::isVerified)
-                .orElse(false);
+            .map(User::isVerified)
+            .orElse(false);
     }
 
     public void setNotifyPreference(String email, boolean notify) {
         userRepository.findByEmail(email)
-                .ifPresent(user -> {
-                    user.setNotify(notify);
-                    userRepository.save(user);
-                });
+            .ifPresent(user -> {
+                user.setNotify(notify);
+                userRepository.save(user);
+            });
+    }
+
+    public String getEmail(int id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(User::getEmail).orElse(null);
+    }
+
+    public int getId(String Email) {
+        Optional<User> userOpt = userRepository.findByEmail(Email);
+        return userOpt.map(User::getId).orElse(-1);
     }
 
     public boolean checkToken(String token, String email) {
@@ -96,6 +111,30 @@ public class UserService {
         return false;
     }
 
+    public void setDatagroup(int id, String datagroup) {
+        userRepository.findById(id)
+            .ifPresent(user -> {
+                user.setDatagroup(datagroup);
+                userRepository.save(user);
+            });
+    }
+
+    public String getDatagroup(int id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(User::getDatagroup).orElse("");
+    }
+
+    public void leaveDatagroup(int id) {
+        userRepository.findById(id)
+            .ifPresent(user -> {
+                String own = user.getOwnDatagroup();
+                if (own.equals(user.getDatagroup())) return;
+                user.setDatagroup(own);
+                userRepository.save(user);
+            });
+
+    }
+
     public void deleteUserData(int id) {
         userRepository.deleteById(id);
     }
@@ -108,4 +147,5 @@ public class UserService {
         }
         return code.toString();
     }
+
 } 

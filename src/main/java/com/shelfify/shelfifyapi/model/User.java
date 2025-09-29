@@ -1,4 +1,4 @@
-package com.lager.lagerappapi.model;
+package com.shelfify.shelfifyapi.model;
 
 import jakarta.persistence.*;
 
@@ -23,6 +23,9 @@ public class User {
     private boolean verified;
 
     private String token;
+
+    @Column(name = "own_datagroup")
+    private String ownDatagroup;
 
     // Getter und Setter
     public Integer getId() {
@@ -79,5 +82,13 @@ public class User {
 
     public String getToken() {
         return token;
+    }
+
+    public String getOwnDatagroup() {
+        return ownDatagroup;
+    }
+
+    public void setOwnDatagroup(String last_datagroup) {
+        this.ownDatagroup = last_datagroup;
     }
 } 
