@@ -24,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 @RestController
@@ -61,13 +62,22 @@ public class ProductController {
                 userService.getDatagroup(id));
     }
 
-    // TODO: Need to be converted to work with datagroups
     @GetMapping("/lookupProductName")
     public ResponseEntity<String> lookupProductName(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
+        if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         try {
-            return eanMappingRepository.findByEan(ean)
-                    .map(mapping -> ResponseEntity.ok(mapping.getProductName()))
-                    .orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
+            Optional<EanMapping> globalMapping = eanMappingRepository.findByEanAndDatagroupIsNull(ean);
+            if (globalMapping.isPresent()) {
+                return ResponseEntity.ok(globalMapping.get().getProductName());
+            }
+
+            String datagroup = userService.getDatagroup(id);
+            Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
+            if (groupMapping.isPresent()) {
+                return ResponseEntity.ok(groupMapping.get().getProductName());
+            }
+
+            return fetchAndStoreProductNameFromApi(ean);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -95,10 +105,8 @@ public class ProductController {
 
     @PostMapping("/addProduct")
     public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token) {
-        System.out.println("addProduct " + name + " " + ablaufdatum + " " + id + " " + token);
-        if (userService.checkToken(token, id)) return null;
+        if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         String datagroup = userService.getDatagroup(id);
-        System.out.println("datagroup");
         try (Connection connection = dataSource.getConnection()) {
             java.sql.Date sqlDate = java.sql.Date.valueOf(ablaufdatum);
 
@@ -135,19 +143,20 @@ public class ProductController {
         }
     }
 
-    // TODO: Need to be converted to work with datagroups
     @PostMapping("/addEAN")
     public ResponseEntity<String> addEAN(@RequestParam String ean, @RequestParam String name, @RequestParam int id, @RequestParam String token) {
-        System.out.println("addEAN " + ean + " " + name + " " + id + " " + token);
+        if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String datagroup = userService.getDatagroup(id);
+
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement insertStmt = connection.prepareStatement(
-                    "INSERT INTO ean_mapping (ean, product_name) VALUES (?, ?)");
+                    "INSERT INTO ean_mapping (ean, product_name, datagroup) VALUES (?, ?, ?)");
             insertStmt.setString(1, ean);
             insertStmt.setString(2, name);
+            insertStmt.setString(3, datagroup);
             insertStmt.executeUpdate();
             return ResponseEntity.ok("Produkt " + ean + " wurde hinzugefügt.");
         } catch (SQLException e) {
-            // Fehlercode 1062 = Duplicate entry (MySQL)
             if (e.getErrorCode() == 1062) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Fehler: Produktname oder EAN bereits vorhanden.");
             }
@@ -158,14 +167,19 @@ public class ProductController {
 
     @DeleteMapping("/removeProduct")
     public ResponseEntity<String> removeProduct(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
-        if (userService.checkToken(token, id)) return null;
-        System.out.println("removeProduct " + ean + " " + id + " " + token);
-        String name = eanMappingRepository.findByEan(ean)
-                .map(EanMapping::getProductName)
-                .orElse(null);
+        if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Ungültiger Token.");
 
+        String name = null;
         String datagroup = userService.getDatagroup(id);
-        System.out.println("datagroup" + datagroup + "  name " + name);
+        Optional<EanMapping> globalMapping = eanMappingRepository.findByEanAndDatagroupIsNull(ean);
+        if (globalMapping.isPresent()) {
+            name =globalMapping.get().getProductName();
+        }
+
+        Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
+        if (groupMapping.isPresent()) {
+            name = globalMapping.get().getProductName();
+        }
 
         if (name == null || name.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname konnte nicht gefunden werden.");

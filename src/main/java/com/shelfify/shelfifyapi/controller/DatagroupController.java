@@ -31,11 +31,11 @@ public class DatagroupController {
     public ResponseEntity<String> inviteToDatagroup(@RequestParam int id, @RequestParam String token, @RequestParam String email) {
         System.out.println("inviteToDatagroup" + id + " " + token + " " + email);
         if (userService.checkToken(token, id)) {
-            return ResponseEntity.status(300).build(); // Token ungültig
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } else if (notificationRepo.checkBlocked(email, id)) {
-            return ResponseEntity.status(303).build(); // E-Mail blockiert
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } else if (!notificationRepo.checkEmail(email)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build(); // E-Mail schon vorhanden
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         String invCode = datagroupService.createInvitationCode(notificationRepo.getDatagroup(id));
         emailService.sendSimpleEmail(email, "Einladung zur Datengruppe", invCode);
