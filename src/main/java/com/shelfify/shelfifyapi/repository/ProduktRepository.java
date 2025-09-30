@@ -1,12 +1,13 @@
 package com.shelfify.shelfifyapi.repository;
 
 
-import com.shelfify.shelfifyapi.model.Products;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.shelfify.shelfifyapi.model.Products;
 
 
 public interface ProduktRepository extends JpaRepository<Products, Long> {

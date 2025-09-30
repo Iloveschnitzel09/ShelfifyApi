@@ -1,21 +1,25 @@
 package com.shelfify.shelfifyapi.service;
 
-import com.shelfify.shelfifyapi.model.Products;
-import com.shelfify.shelfifyapi.repository.UserRepository;
-import jakarta.mail.internet.MimeMessage;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Properties;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import com.shelfify.shelfifyapi.model.Products;
+import com.shelfify.shelfifyapi.repository.UserRepository;
+
+import jakarta.mail.internet.MimeMessage;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Properties;
 
 @Service
 public class EmailService {
@@ -68,13 +72,15 @@ public class EmailService {
         return mailSender;
     }
 
+    @Async
     public void sendSimpleEmail(String to, String subject, String invCode) {
         // Überprüfe, ob der Benutzer verifiziert ist und Benachrichtigungen aktiviert hat
         userRepository.findByEmail(to)
 //                .filter(user -> user.isVerified() && user.isNotify())
                 .ifPresent(user -> {
                     try {
-                        MimeMessage mimeMessage = getMailSender().createMimeMessage();
+                        JavaMailSenderImpl mailSender = getMailSender();
+                        MimeMessage mimeMessage = mailSender.createMimeMessage();
                         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
                         helper.setFrom(username);
@@ -85,7 +91,7 @@ public class EmailService {
                                 + "<p>du wurdest eingeladen, einer Datengruppe in Shelfify beizutreten.</p>"
                                 + "<p>Bitte öffne die Shelfify-App und gib folgenden Einladungscode innerhalb von 5 Minuten ein:</p>"
                                 + "<p style=\"font-size:18px; font-weight:bold; color:#2c3e50;\">" + invCode + "</p>"
-                                + "<p>So funktioniert’s:</p>"
+                                + "<p>So funktioniert's:</p>"
                                 + "<ol>"
                                 + "  <li>Shelfify-App öffnen</li>"
                                 + "  <li>Zum Bereich <b>Datengruppe beitreten</b> gehen</li>"
@@ -95,7 +101,7 @@ public class EmailService {
 
 
                         helper.setText(html, true); // true = HTML
-                        getMailSender().send(mimeMessage);
+                        mailSender.send(mimeMessage);
 
                     } catch (Exception e) {
                         throw new RuntimeException("Fehler beim E-Mail-Versand: " + e.getMessage());
@@ -103,7 +109,8 @@ public class EmailService {
                 });
     }
 
-    public void sendExpirationAlert(List<Products> expiredProducts, List<Products> expiringProducts) {
+    @Async
+    public void sendExpirationAlert(List<Products> expiredProducts, List<Products> expiringProducts, String email) {
         // Erstelle den E-Mail-Text
         StringBuilder body = new StringBuilder();
 
@@ -114,9 +121,9 @@ public class EmailService {
 
             for (Products product : expiredProducts) {
                 body.append(String.format("- %s (Menge: %d) ist am %s abgelaufen\n",
-                    product.getProduktname(),
-                    product.getMenge(),
-                    product.getAblaufdatum().toString()));
+                        product.getProduktname(),
+                        product.getMenge(),
+                        product.getAblaufdatum().toString()));
             }
             body.append("\n");
         }
@@ -128,29 +135,23 @@ public class EmailService {
 
             for (Products product : expiringProducts) {
                 body.append(String.format("- %s (Menge: %d) läuft am %s ab\n",
-                    product.getProduktname(),
-                    product.getMenge(),
-                    product.getAblaufdatum().toString()));
+                        product.getProduktname(),
+                        product.getMenge(),
+                        product.getAblaufdatum().toString()));
             }
         }
 
         String messageText = body.toString();
 
-        // Sende nur an verifizierte Benutzer mit aktivierten Benachrichtigungen
-        userRepository.findAll().stream()
-            .filter(user -> user.isVerified() && user.isNotify())
-            .forEach(user -> {
-                try {
-                    SimpleMailMessage message = new SimpleMailMessage();
-                    message.setFrom("IloveSchnitzel09@gmx.de");
-                    message.setTo(user.getEmail());
-                    message.setSubject("Produktablauf-Benachrichtigung");
-                    message.setText(messageText);
-                    getMailSender().send(message);
-                } catch (Exception e) {
-                    // Log error but continue with other users
-                    System.err.println("Fehler beim Senden an " + user.getEmail() + ": " + e.getMessage());
-                }
-            });
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("IloveSchnitzel09@gmx.de");
+            message.setTo(email);
+            message.setSubject("Produktablauf-Benachrichtigung- SORRY ONSO EIN TEST");
+            message.setText(messageText);
+            getMailSender().send(message);
+        } catch (Exception e) {
+            System.err.println("Fehler beim Senden an " + email + ": " + e.getMessage());
+        }
     }
-} 
+}

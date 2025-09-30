@@ -5,6 +5,7 @@ import com.shelfify.shelfifyapi.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -22,11 +23,10 @@ public class UserService {
     @Value("${spring.mail.username}")
     private String username;
 
+    @Async
     public void sendVerificationCode(String email) {
-        // Generiere einen 6-stelligen Code
         String verificationCode = generateVerificationCode();
 
-        // Speichere oder aktualisiere den Benutzer
         User user = userRepository.findByEmail(email)
                 .orElse(new User());
         user.setEmail(email);
@@ -34,7 +34,6 @@ public class UserService {
         user.setVerified(false);
         userRepository.save(user);
 
-        // Sende den Code per E-Mail (direkt, ohne Verifizierungsprüfung)
         sendVerificationEmail(email, verificationCode);
     }
 

@@ -1,9 +1,11 @@
 package com.shelfify.shelfifyapi.controller;
 
-import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
-import com.shelfify.shelfifyapi.repository.UserRepository;
-import com.shelfify.shelfifyapi.scheduler.ExpirationCheckScheduler;
-import com.shelfify.shelfifyapi.service.UserService;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -16,12 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
+import com.shelfify.shelfifyapi.service.UserService;
 
 @RestController
 public class UserAccController {
@@ -31,9 +29,6 @@ public class UserAccController {
 
     @Autowired
     private NotificationSettingsRepository notificationRepo;
-
-    @Autowired
-    private UserRepository userRepo;
 
     @Autowired
     private UserService userService;
@@ -114,22 +109,22 @@ public class UserAccController {
     /// TEST KRAM
 
 
-    @Autowired
-    private ExpirationCheckScheduler emailService;
+//    @Autowired
+//    private ExpirationCheckScheduler emailService;
 
-    @GetMapping("/sendTestEmail")
-    public ResponseEntity<String> sendTestEmail() {
-        try {
-            String[] email = notificationRepo.getAllNotificationEmails().toArray(new String[0]);
-            if (email[0] == null) {
-                return ResponseEntity.badRequest().body("Keine E-Mail-Adresse gespeichert!");
-            }
-
-            emailService.checkExpiringProducts();
-
-            return ResponseEntity.ok("Test-E-Mail wurde gesendet an: " + Arrays.toString(email));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Fehler beim Senden: " + e.getMessage());
-        }
-    }
+//    @GetMapping("/sendTestEmail")
+//    public ResponseEntity<String> sendTestEmail() {
+//        try {
+//            String[] email = notificationRepo.getAllNotificationEmails().toArray(new String[0]);
+//            if (email[0] == null) {
+//                return ResponseEntity.badRequest().body("Keine E-Mail-Adresse gespeichert!");
+//            }
+//
+//            emailService.checkExpiringProducts();
+//
+//            return ResponseEntity.ok("Test-E-Mail wurde gesendet an: " + Arrays.toString(email));
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body("Fehler beim Senden: " + e.getMessage());
+//        }
+//    }
 }
