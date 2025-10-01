@@ -1,20 +1,6 @@
 package com.shelfify.shelfifyapi.controller;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shelfify.shelfifyapi.ean.EanMapping;
-import com.shelfify.shelfifyapi.ean.EanMappingRepository;
-import com.shelfify.shelfifyapi.model.Products;
-import com.shelfify.shelfifyapi.repository.ProduktRepository;
-import com.shelfify.shelfifyapi.repository.UserRepository;
-import com.shelfify.shelfifyapi.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +12,25 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shelfify.shelfifyapi.ean.EanMapping;
+import com.shelfify.shelfifyapi.ean.EanMappingRepository;
+import com.shelfify.shelfifyapi.model.Products;
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
+import com.shelfify.shelfifyapi.service.UserService;
 
 @RestController
 public class ProductController {

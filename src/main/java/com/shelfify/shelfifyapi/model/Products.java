@@ -1,11 +1,11 @@
 package com.shelfify.shelfifyapi.model;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-
-import java.time.LocalDate;
 
 @Entity
 @IdClass(ProductKey.class)
