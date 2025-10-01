@@ -24,7 +24,7 @@ public class ExpirationCheckScheduler {
     private UserRepository userRepo;
 
     // Jeden Montag um 7:00 Uhr
-    @Scheduled(cron = "0 53 23 * * TUE")
+    @Scheduled(cron = "0 0 7 * * MON")
     public void checkExpiringProducts() {
         LocalDate today = LocalDate.now();
         LocalDate sevenDaysFromNow = today.plusDays(7);
@@ -36,7 +36,6 @@ public class ExpirationCheckScheduler {
                 String email = user.getEmail();
 
                 List<Products> expiredProducts = produktRepo.findByAblaufdatumBeforeAndDatagroup(today, datagroup);
-
                 List<Products> expiringProducts = produktRepo.findByAblaufdatumBetweenAndDatagroup(today, sevenDaysFromNow, datagroup);
 
                 if (!expiredProducts.isEmpty() || !expiringProducts.isEmpty()) {
