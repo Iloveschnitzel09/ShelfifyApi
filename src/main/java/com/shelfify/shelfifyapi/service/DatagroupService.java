@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Random;
 
 @Repository
@@ -34,12 +35,21 @@ public class DatagroupService {
         try {
             return jdbc.queryForObject(
                     "SELECT datagroup FROM invitation_codes WHERE code = ? AND expires_at > ?",
-                    new Object[]{String.valueOf(code), new Timestamp(System.currentTimeMillis())},
-                    String.class
+                    String.class,
+                    code,
+                    new Timestamp(System.currentTimeMillis())
             );
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public List<String> getEmailsFromDatagroup(String datagroup) {
+        return jdbc.queryForList(
+                "SELECT email FROM users WHERE datagroup = ?",
+                String.class,
+                datagroup
+        );
     }
 
     private String generateVerificationCode() {

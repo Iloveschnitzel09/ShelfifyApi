@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class RecipieController {
+public class RecipeController {
 
     @PostMapping("/createRecipie")
     public ResponseEntity<String> createRecipie(@RequestParam int id, @RequestParam String token) {

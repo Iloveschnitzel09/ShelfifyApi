@@ -183,7 +183,7 @@ public class ProductController {
 
         Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
         if (groupMapping.isPresent()) {
-            name = globalMapping.get().getProductName();
+            name = groupMapping.get().getProductName();
         }
 
         if (name == null || name.isEmpty()) {

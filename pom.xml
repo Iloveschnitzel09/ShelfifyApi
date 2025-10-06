@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.shelfify</groupId>
 	<artifactId>shelfifyapi</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>ShelfifyApi</name>
 	<description>It&apos;s teh API for the Lager App</description>
 	<url/>

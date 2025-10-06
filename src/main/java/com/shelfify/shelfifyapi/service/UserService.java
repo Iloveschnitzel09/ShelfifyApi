@@ -92,6 +92,11 @@ public class UserService {
         return userOpt.map(User::getId).orElse(-1);
     }
 
+    public String getOwnDatagroup(int id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(User::getOwnDatagroup).orElse(null);
+    }
+
     public boolean checkToken(String token, String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         return userOpt.isEmpty() || !userOpt.get().getToken().equals(token);

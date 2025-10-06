@@ -40,6 +40,7 @@ public class UserAuthController {
     @PostMapping("/verifyCode")
     public ResponseEntity<String> verifyCode(@RequestParam String email, @RequestParam String code, @RequestParam String token) {
         try {
+            System.out.println(email + " " + token);
             if(userService.checkToken(token, email)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
             boolean isValid = userService.verifyCode(email, code);
