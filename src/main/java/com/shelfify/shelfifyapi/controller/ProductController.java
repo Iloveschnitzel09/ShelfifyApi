@@ -78,11 +78,8 @@ public class ProductController {
 
             String datagroup = userService.getDatagroup(id);
             Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
-            if (groupMapping.isPresent()) {
-                return ResponseEntity.ok(groupMapping.get().getProductName());
-            }
+            return groupMapping.map(eanMapping -> ResponseEntity.ok(eanMapping.getProductName())).orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
 
-            return fetchAndStoreProductNameFromApi(ean);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -109,7 +106,7 @@ public class ProductController {
     }
 
     @PostMapping("/addProduct")
-    public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token) {
+    public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         String datagroup = userService.getDatagroup(id);
         try (Connection connection = dataSource.getConnection()) {
@@ -126,7 +123,7 @@ public class ProductController {
                 int currentMenge = rs.getInt("menge");
                 PreparedStatement updateStmt = connection.prepareStatement(
                         "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?");
-                updateStmt.setInt(1, currentMenge + 1);
+                updateStmt.setInt(1, currentMenge + quantity);
                 updateStmt.setString(2, name);
                 updateStmt.setDate(3, sqlDate);
                 updateStmt.setString(4, datagroup);
@@ -136,7 +133,7 @@ public class ProductController {
                 PreparedStatement insertStmt = connection.prepareStatement(
                         "INSERT INTO products (produktname, menge, ablaufdatum, datagroup) VALUES (?, ?, ?, ?)");
                 insertStmt.setString(1, name);
-                insertStmt.setInt(2, 1);
+                insertStmt.setInt(2, quantity);
                 insertStmt.setDate(3, sqlDate);
                 insertStmt.setString(4, datagroup);
                 insertStmt.executeUpdate();
