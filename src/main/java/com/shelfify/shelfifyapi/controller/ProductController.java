@@ -168,7 +168,7 @@ public class ProductController {
 
 
     @DeleteMapping("/removeProduct")
-    public ResponseEntity<String> removeProduct(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
+    public ResponseEntity<String> removeProduct(@RequestParam String ean, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Ungültiger Token.");
 
         String name = null;
@@ -198,10 +198,10 @@ public class ProductController {
                 int menge = rs.getInt("menge");
                 String ablaufdatum = rs.getString("ablaufdatum");
 
-                if (menge > 1) {
+                if (menge > quantity) {
                     String updateQuery = "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
                     try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
-                        updateStmt.setInt(1, menge - 1);
+                        updateStmt.setInt(1, menge - quantity);
                         updateStmt.setString(2, name);
                         updateStmt.setString(3, ablaufdatum);
                         updateStmt.setString(4, datagroup);
