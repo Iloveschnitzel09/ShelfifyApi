@@ -2,6 +2,7 @@ package com.shelfify.shelfifyapi.controller;
 
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -81,6 +82,7 @@ public class ProductController {
             return groupMapping.map(eanMapping -> ResponseEntity.ok(eanMapping.getProductName())).orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
 
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -88,9 +90,26 @@ public class ProductController {
     private ResponseEntity<String> fetchAndStoreProductNameFromApi(String ean) {
         try {
             String apiUrl = "https://world.openfoodfacts.org/api/v2/product/" + ean + ".json";
-            String jsonResponse = new Scanner(new URL(apiUrl).openStream(), StandardCharsets.UTF_8).useDelimiter("\\A").next();
-            String productName = new ObjectMapper().readTree(jsonResponse)
-                    .path("product").path("product_name").asText();
+            HttpURLConnection connection = (HttpURLConnection) new URL(apiUrl).openConnection();
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 404) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produkt nicht gefunden.");
+            } else if (responseCode != 200) {
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body("Fehler von OpenFoodFacts: " + responseCode);
+            }
+
+            // Nur wenn 200 OK
+            String jsonResponse = new Scanner(connection.getInputStream(), StandardCharsets.UTF_8)
+                    .useDelimiter("\\A").next();
+
+            String productName = new ObjectMapper()
+                    .readTree(jsonResponse)
+                    .path("product")
+                    .path("product_name")
+                    .asText();
 
             if (productName != null && !productName.isEmpty()) {
                 EanMapping newEntry = new EanMapping();
@@ -99,11 +118,20 @@ public class ProductController {
                 eanMappingRepository.save(newEntry);
                 return ResponseEntity.ok(productName);
             }
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname nicht gefunden.");
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname leer oder nicht vorhanden.");
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fehler beim Zugriff auf OpenFoodFacts.");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body("Fehler beim Verbinden mit OpenFoodFacts: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unerwarteter Fehler: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/addProduct")
     public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
@@ -151,6 +179,15 @@ public class ProductController {
         String datagroup = userService.getDatagroup(id);
 
         try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement checkStmt = connection.prepareStatement(
+                    "SELECT * FROM ean_mapping WHERE (ean = ? OR product_name = ?) AND (datagroup = ? or datagroup IS NULL)");
+            checkStmt.setString(1, ean);
+            checkStmt.setString(2, name);
+            checkStmt.setString(3, datagroup);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
             PreparedStatement insertStmt = connection.prepareStatement(
                     "INSERT INTO ean_mapping (ean, product_name, datagroup) VALUES (?, ?, ?)");
             insertStmt.setString(1, ean);
