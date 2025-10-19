@@ -5,6 +5,7 @@ import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import com.shelfify.shelfifyapi.repository.UserRepository;
 import com.shelfify.shelfifyapi.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,7 @@ public class ExpirationCheckScheduler {
                 String datagroup = user.getDatagroup();
                 String email = user.getEmail();
 
-                List<Products> expiredProducts = produktRepo.findByAblaufdatumBeforeAndDatagroup(today, datagroup);
+                List<Products> expiredProducts = produktRepo.findByAblaufdatumBeforeAndDatagroup(today, datagroup, Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum")));
                 List<Products> expiringProducts = produktRepo.findByAblaufdatumBetweenAndDatagroup(today, sevenDaysFromNow, datagroup);
 
                 if (!expiredProducts.isEmpty() || !expiringProducts.isEmpty()) {

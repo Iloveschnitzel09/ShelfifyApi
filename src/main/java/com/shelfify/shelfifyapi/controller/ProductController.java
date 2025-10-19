@@ -65,7 +65,9 @@ public class ProductController {
         LocalDate cutoffDate = LocalDate.now().plusDays(days);
         return produktRepository.findByAblaufdatumBeforeAndDatagroup(
                 cutoffDate,
-                userService.getDatagroup(id));
+                userService.getDatagroup(id),
+                Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum"))
+        );
     }
 
     @GetMapping("/lookupProductName")
