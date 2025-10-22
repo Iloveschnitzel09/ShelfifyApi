@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,8 @@ public class UserAccController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private ProduktRepository produktRepository;
 
     @GetMapping("/appSync")
     public ResponseEntity<Map<String, Object>> appSync(@RequestParam(required = false) Integer id, @RequestParam(required = true) String token) {
@@ -96,35 +99,12 @@ public class UserAccController {
     public ResponseEntity<String> deleteAcc(@RequestParam int id, @RequestParam String token) {
         try {
             if(userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
+            produktRepository.deleteByDatagroup(userService.getDatagroup(id));
             userService.deleteUserData(id);
 
             return ResponseEntity.ok("Benutzerkonto und alle zugehörigen Daten wurden gelöscht.");
         } catch (Exception e) {
-            System.out.println("2" + e);
             return ResponseEntity.badRequest().body("Fehler beim Löschen des Kontos: " + e.getMessage());
         }
     }
-
-    /// TEST KRAM
-
-
-//    @Autowired
-//    private ExpirationCheckScheduler emailService;
-
-//    @GetMapping("/sendTestEmail")
-//    public ResponseEntity<String> sendTestEmail() {
-//        try {
-//            String[] email = notificationRepo.getAllNotificationEmails().toArray(new String[0]);
-//            if (email[0] == null) {
-//                return ResponseEntity.badRequest().body("Keine E-Mail-Adresse gespeichert!");
-//            }
-//
-//            emailService.checkExpiringProducts();
-//
-//            return ResponseEntity.ok("Test-E-Mail wurde gesendet an: " + Arrays.toString(email));
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body("Fehler beim Senden: " + e.getMessage());
-//        }
-//    }
 }

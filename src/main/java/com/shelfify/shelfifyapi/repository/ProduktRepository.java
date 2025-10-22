@@ -18,4 +18,5 @@ public interface ProduktRepository extends JpaRepository<Products, Long> {
 
     List<Products> findByAblaufdatumBetweenAndDatagroup(LocalDate startDate, LocalDate endDate, String datagroup);
 
+    void deleteByDatagroup(String datagroup);
 }
