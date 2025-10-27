@@ -147,7 +147,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("IloveSchnitzel09@gmx.de");
             message.setTo(email);
-            message.setSubject("Produktablauf-Benachrichtigung- SORRY ONSO EIN TEST");
+            message.setSubject("Produktablauf-Benachrichtigung");
             message.setText(messageText);
             getMailSender().send(message);
         } catch (Exception e) {

@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import com.shelfify.shelfifyapi.service.UserService;
 
 @RestController
@@ -70,9 +70,9 @@ public class UserAccController {
                     Map<String, Object> user = jdbc.queryForMap("SELECT * FROM users WHERE id = ?", id);
                     return ResponseEntity.ok(user);
                 }
-                return ResponseEntity.status(404).body(Map.of("error", "Token Falsch"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token Falsch"));
             } catch (EmptyResultDataAccessException e) {
-                return ResponseEntity.status(404).body(Map.of("error", "ID nicht gefunden"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "ID nicht gefunden"));
             }
         }
     }
@@ -91,7 +91,8 @@ public class UserAccController {
             notificationRepo.setCode(null, id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            System.out.println("Fehler beim Setzen der E-Mail: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body("Fehler beim Setzen der E-Mail: " + e.getMessage());
         }
     }
 
@@ -104,7 +105,8 @@ public class UserAccController {
 
             return ResponseEntity.ok("Benutzerkonto und alle zugehörigen Daten wurden gelöscht.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Fehler beim Löschen des Kontos: " + e.getMessage());
+            System.out.println("Fehler beim Löschen des Kontos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Fehler beim Löschen des Kontos: " + e.getMessage());
         }
     }
 }
