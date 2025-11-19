@@ -12,7 +12,7 @@ import com.shelfify.shelfifyapi.model.Products;
 
 public interface ProduktRepository extends JpaRepository<Products, Long> {
 
-    List<Products> findProductsByDatagroup(String datagroup, Sort sort);
+    List<Products> findByDatagroup(String datagroup, Sort sort);
 
     List<Products> findByAblaufdatumBeforeAndDatagroup(LocalDate cutoffDate, String datagroup, Sort sort);
 
