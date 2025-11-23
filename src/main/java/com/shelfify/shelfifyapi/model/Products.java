@@ -1,5 +1,6 @@
 package com.shelfify.shelfifyapi.model;
 
+import java.math.BigInteger;
 import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
@@ -13,7 +14,7 @@ import jakarta.persistence.Table;
 public class Products {
 
     @Id
-    private String produktname;
+    private String ean;
 
     private int menge;
 
@@ -22,12 +23,12 @@ public class Products {
 
     private String datagroup;
 
-    public String getProduktname() {
-        return produktname;
+    public String getEan() {
+        return ean;
     }
 
-    public void setProduktname(String produktname) {
-        this.produktname = produktname;
+    public void setEan(String ean) {
+        this.ean = ean;
     }
 
     public int getMenge() {
@@ -40,6 +41,10 @@ public class Products {
 
     public LocalDate getAblaufdatum() {
         return ablaufdatum;
+    }
+
+    public void setAblaufdatum(LocalDate ablaufdatum) {
+        this.ablaufdatum = ablaufdatum;
     }
 
     public String getDatagroup() {

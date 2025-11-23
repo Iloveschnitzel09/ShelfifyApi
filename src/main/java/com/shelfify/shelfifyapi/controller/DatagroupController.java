@@ -1,7 +1,6 @@
 package com.shelfify.shelfifyapi.controller;
 
 import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
-import com.shelfify.shelfifyapi.repository.UserRepository;
 import com.shelfify.shelfifyapi.service.DatagroupService;
 import com.shelfify.shelfifyapi.service.EmailService;
 import com.shelfify.shelfifyapi.service.UserService;

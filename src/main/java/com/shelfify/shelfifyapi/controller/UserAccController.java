@@ -1,11 +1,8 @@
 package com.shelfify.shelfifyapi.controller;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
+import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
+import com.shelfify.shelfifyapi.repository.ProduktRepository;
+import com.shelfify.shelfifyapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -13,14 +10,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.shelfify.shelfifyapi.repository.NotificationSettingsRepository;
-import com.shelfify.shelfifyapi.repository.ProduktRepository;
-import com.shelfify.shelfifyapi.service.UserService;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 public class UserAccController {
@@ -37,7 +37,7 @@ public class UserAccController {
     private ProduktRepository produktRepository;
 
     @GetMapping("/appSync")
-    public ResponseEntity<Map<String, Object>> appSync(@RequestParam(required = false) Integer id, @RequestParam(required = true) String token) {
+    public ResponseEntity<Map<String, Object>> appSync(@RequestParam(required = false) Integer id, @RequestParam String token) {
         if (id == null) {
             // Neue ID erzeugen und zurückgeben
             KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -96,6 +96,7 @@ public class UserAccController {
         }
     }
 
+    @Transactional
     @PostMapping("/deleteAcc")
     public ResponseEntity<String> deleteAcc(@RequestParam int id, @RequestParam String token) {
         try {

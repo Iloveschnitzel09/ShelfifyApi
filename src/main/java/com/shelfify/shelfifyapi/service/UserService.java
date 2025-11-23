@@ -44,7 +44,7 @@ public class UserService {
             message.setTo(email);
             message.setSubject("Ihr Verifizierungscode für die LagerApp");
             message.setText(String.format(
-                "Ihr Verifizierungscode lautet: %s\n\n" +
+                "Ihr Verifizierungscode lautet: %s\n" +
                 "Bitte geben Sie diesen Code in der App ein, um Ihre E-Mail-Adresse zu verifizieren.",
                 code
             ));
@@ -105,14 +105,6 @@ public class UserService {
     public boolean checkToken(String token, int id) {
         Optional<User> userOpt = userRepository.findById(id);
         return userOpt.isEmpty() || !userOpt.get().getToken().equals(token);
-    }
-
-    public boolean checkInvite(String email, int id) {
-        userRepository.findById(id)
-                .ifPresent(user -> {
-
-                });
-        return false;
     }
 
     public void setDatagroup(int id, String datagroup) {

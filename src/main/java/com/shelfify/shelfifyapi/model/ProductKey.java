@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 // Muss equals() und hashCode() korrekt implementieren!
 public class ProductKey implements Serializable {
-    private String produktname;
+    private String ean;
     private LocalDate ablaufdatum;
 
 }

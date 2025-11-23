@@ -121,7 +121,7 @@ public class EmailService {
 
             for (Products product : expiredProducts) {
                 body.append(String.format("- %s (Menge: %d) ist am %s abgelaufen\n",
-                        product.getProduktname(),
+                        product.getEan(),
                         product.getMenge(),
                         product.getAblaufdatum().toString()));
             }
@@ -135,7 +135,7 @@ public class EmailService {
 
             for (Products product : expiringProducts) {
                 body.append(String.format("- %s (Menge: %d) läuft am %s ab\n",
-                        product.getProduktname(),
+                        product.getEan(),
                         product.getMenge(),
                         product.getAblaufdatum().toString()));
             }

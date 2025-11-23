@@ -1,37 +1,26 @@
 package com.shelfify.shelfifyapi.controller;
 
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
-
-import javax.sql.DataSource;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shelfify.shelfifyapi.ean.EanMapping;
 import com.shelfify.shelfifyapi.ean.EanMappingRepository;
 import com.shelfify.shelfifyapi.model.Products;
 import com.shelfify.shelfifyapi.repository.ProduktRepository;
 import com.shelfify.shelfifyapi.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.sql.DataSource;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
 
 @RestController
 public class ProductController {
@@ -48,41 +37,38 @@ public class ProductController {
     @Autowired
     private DataSource dataSource;
 
+
     @GetMapping("/products")
-    public ResponseEntity<List<Products>> getAllProducts(@RequestParam int id, @RequestParam String token) {
+    public ResponseEntity<List<Products>> getAllProducts(@RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "-1") int days) {
         try {
             if (userService.checkToken(token, id)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            
-            List<Products> products = produktRepository.findByDatagroup(
-                    userService.getDatagroup(id),
-                    Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum"))
-            );
-            return ResponseEntity.ok(products);
+            String datagroup = userService.getDatagroup(id);
+
+            List<Products> products;
+            if (days < 0) {
+                products = produktRepository.findByDatagroup(
+                        datagroup,
+                        Sort.by(Sort.Order.asc("ean"), Sort.Order.asc("ablaufdatum")));
+            } else {
+                LocalDate cutoffDate = LocalDate.now().plusDays(days);
+                products = produktRepository.findByAblaufdatumBeforeAndDatagroup(
+                        cutoffDate,
+                        datagroup,
+                        Sort.by(Sort.Order.asc("ean"), Sort.Order.asc("ablaufdatum"))
+                );
+            }
+            for(Products p : products) {
+                String ean = p.getEan();
+                String name = lookupProductName(ean, id, token).getBody();
+                p.setEan(name);
+                System.out.println(p.getEan());
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(products);
         } catch (Exception e) {
             System.out.println("Fehler beim Laden der Produkte: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-
-    @GetMapping("/spoiledProducts")
-    public ResponseEntity<List<Products>> getSpoiledProducts(@RequestParam(defaultValue = "10") int days, @RequestParam int id, @RequestParam String token) {
-        try {
-            if (userService.checkToken(token, id)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-            LocalDate cutoffDate = LocalDate.now().plusDays(days);
-            List<Products> spoiledProducts = produktRepository.findByAblaufdatumBeforeAndDatagroup(
-                    cutoffDate,
-                    userService.getDatagroup(id),
-                    Sort.by(Sort.Order.asc("produktname"), Sort.Order.asc("ablaufdatum"))
-            );
-            return ResponseEntity.ok(spoiledProducts);
-        } catch (Exception e) {
-            System.out.println("Fehler beim Laden der abgelaufenen Produkte: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -90,16 +76,20 @@ public class ProductController {
     @GetMapping("/lookupProductName")
     public ResponseEntity<String> lookupProductName(@RequestParam String ean, @RequestParam int id, @RequestParam String token) {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        String datagroup = userService.getDatagroup(id);
+
         try {
-            Optional<EanMapping> globalMapping = eanMappingRepository.findByEanAndDatagroupIsNull(ean);
-            if (globalMapping.isPresent()) {
-                return ResponseEntity.ok(globalMapping.get().getProductName());
+            Optional<EanMapping> groupMapping =
+                    eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
+
+            if (groupMapping.isPresent()) {
+                return ResponseEntity.ok(groupMapping.get().getProductName());
             }
 
-            String datagroup = userService.getDatagroup(id);
-            Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
-            return groupMapping.map(eanMapping -> ResponseEntity.ok(eanMapping.getProductName())).orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
+            Optional<EanMapping> globalMapping =
+                    eanMappingRepository.findByEanAndDatagroupIsNull(ean);
 
+            return globalMapping.map(eanMapping -> ResponseEntity.ok(eanMapping.getProductName())).orElseGet(() -> fetchAndStoreProductNameFromApi(ean));
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -114,13 +104,11 @@ public class ProductController {
 
             int responseCode = connection.getResponseCode();
             if (responseCode == 404) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produkt nicht gefunden.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             } else if (responseCode != 200) {
-                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                        .body("Fehler von OpenFoodFacts: " + responseCode);
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
             }
 
-            // Nur wenn 200 OK
             String jsonResponse = new Scanner(connection.getInputStream(), StandardCharsets.UTF_8)
                     .useDelimiter("\\A").next();
 
@@ -134,59 +122,44 @@ public class ProductController {
                 EanMapping newEntry = new EanMapping();
                 newEntry.setEan(ean);
                 newEntry.setProductName(productName);
+                newEntry.setDatagroup(null);
                 eanMappingRepository.save(newEntry);
                 return ResponseEntity.ok(productName);
             }
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname leer oder nicht vorhanden.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("ean leer oder nicht vorhanden.");
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            System.out.println(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
         }
     }
 
 
     @PostMapping("/addProduct")
-    public ResponseEntity<String> addProduct(@RequestParam String name, @RequestParam String ablaufdatum, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
+    public ResponseEntity<String> addProduct(@RequestParam String ean, @RequestParam LocalDate ablaufdatum, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         String datagroup = userService.getDatagroup(id);
-        try (Connection connection = dataSource.getConnection()) {
-            java.sql.Date sqlDate = java.sql.Date.valueOf(ablaufdatum);
 
-            String checkQuery = "SELECT menge FROM products WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
-            PreparedStatement pstmt = connection.prepareStatement(checkQuery);
-            pstmt.setString(1, name);
-            pstmt.setDate(2, sqlDate);
-            pstmt.setString(3, datagroup);
-            ResultSet rs = pstmt.executeQuery();
+        Optional<Products> exist = produktRepository
+                .findByEanAndAblaufdatumAndDatagroup(ean, ablaufdatum, datagroup);
 
-            if (rs.next()) {
-                int currentMenge = rs.getInt("menge");
-                PreparedStatement updateStmt = connection.prepareStatement(
-                        "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?");
-                updateStmt.setInt(1, currentMenge + quantity);
-                updateStmt.setString(2, name);
-                updateStmt.setDate(3, sqlDate);
-                updateStmt.setString(4, datagroup);
-                updateStmt.executeUpdate();
-                return ResponseEntity.ok().build();
-            } else {
-                PreparedStatement insertStmt = connection.prepareStatement("INSERT INTO products (produktname, menge, ablaufdatum, datagroup) VALUES (?, ?, ?, ?)");
-                insertStmt.setString(1, name);
-                insertStmt.setInt(2, quantity);
-                insertStmt.setDate(3, sqlDate);
-                insertStmt.setString(4, datagroup);
-                insertStmt.executeUpdate();
-                return ResponseEntity.ok().build();
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        if (exist.isPresent()) {
+            Products product = exist.get();
+            product.setMenge(product.getMenge() + quantity);
+            produktRepository.save(product);
+            return ResponseEntity.status(HttpStatus.OK).build();
         }
+
+        Products product = new Products();
+        product.setEan(ean);
+        product.setMenge(quantity);
+        product.setAblaufdatum(ablaufdatum);
+        product.setDatagroup(datagroup);
+
+        produktRepository.save(product);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PostMapping("/addEAN")
@@ -194,139 +167,90 @@ public class ProductController {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         String datagroup = userService.getDatagroup(id);
 
-        try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement checkStmt = connection.prepareStatement(
-                    "SELECT * FROM ean_mapping WHERE (ean = ? OR product_name = ?) AND (datagroup = ? or datagroup IS NULL)");
-            checkStmt.setString(1, ean);
-            checkStmt.setString(2, name);
-            checkStmt.setString(3, datagroup);
-            ResultSet rs = checkStmt.executeQuery();
+        // Prüfen ob EAN oder Name global oder gruppenspezifisch existiert
+        Optional<EanMapping> existing =
+                eanMappingRepository.findByEanAndDatagroup(ean, datagroup)
+                        .or(() -> eanMappingRepository.findByEanAndDatagroupIsNull(ean))
+                        .or(() -> eanMappingRepository.findByProductNameAndDatagroup(name, datagroup))
+                        .or(() -> eanMappingRepository.findByProductNameAndDatagroupIsNull(name));
 
-            if (rs.next()) return ResponseEntity.status(HttpStatus.CONFLICT).build();
-
-            PreparedStatement insertStmt = connection.prepareStatement(
-                    "INSERT INTO ean_mapping (ean, product_name, datagroup) VALUES (?, ?, ?)");
-            insertStmt.setString(1, ean);
-            insertStmt.setString(2, name);
-            insertStmt.setString(3, datagroup);
-            insertStmt.executeUpdate();
-            return ResponseEntity.ok("Produkt " + ean + " wurde hinzugefügt.");
-        } catch (SQLException e) {
-            if (e.getErrorCode() == 1062) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
+
+        // Neu anlegen
+        EanMapping newMapping = new EanMapping();
+        newMapping.setEan(ean);
+        newMapping.setProductName(name);
+        newMapping.setDatagroup(datagroup);
+
+        try {
+            eanMappingRepository.save(newMapping);
+            return ResponseEntity.ok("Produkt " + ean + " wurde hinzugefügt.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
     }
 
 
     @DeleteMapping("/removeProduct")
     public ResponseEntity<String> removeProduct(@RequestParam String ean, @RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "1") int quantity) {
         if (userService.checkToken(token, id)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Ungültiger Token.");
-
-        String name = null;
         String datagroup = userService.getDatagroup(id);
-        Optional<EanMapping> globalMapping = eanMappingRepository.findByEanAndDatagroupIsNull(ean);
-        if (globalMapping.isPresent()) {
-            name =globalMapping.get().getProductName();
+
+        Optional<EanMapping> groupMapping =
+                eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
+        Optional<EanMapping> globalMapping =
+                eanMappingRepository.findByEanAndDatagroupIsNull(ean);
+
+        if (groupMapping.isEmpty() && globalMapping.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        List<Products> products = produktRepository.findByEanAndDatagroupOrderByAblaufdatumAsc(ean, datagroup);
+
+        if (products.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        Products oldestProduct = products.get(0);
+
+        if (oldestProduct.getMenge() > quantity) {
+            oldestProduct.setMenge(oldestProduct.getMenge() - quantity);
+            produktRepository.save(oldestProduct);
+        } else {
+            produktRepository.delete(oldestProduct);
         }
-
-        Optional<EanMapping> groupMapping = eanMappingRepository.findByEanAndDatagroup(ean, datagroup);
-        if (groupMapping.isPresent()) {
-            name = groupMapping.get().getProductName();
-        }
-
-        if (name == null || name.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Produktname konnte nicht gefunden werden.");
-        }
-
-        try (Connection connection = dataSource.getConnection()) {
-            String checkQuery = "SELECT menge, ablaufdatum FROM products WHERE produktname = ? AND datagroup = ? ORDER BY ablaufdatum ASC LIMIT 1";
-            PreparedStatement pstmt = connection.prepareStatement(checkQuery);
-            pstmt.setString(1, name);
-            pstmt.setString(2, datagroup);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                int menge = rs.getInt("menge");
-                String ablaufdatum = rs.getString("ablaufdatum");
-
-                if (menge > quantity) {
-                    String updateQuery = "UPDATE products SET menge = ? WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
-                    try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
-                        updateStmt.setInt(1, menge - quantity);
-                        updateStmt.setString(2, name);
-                        updateStmt.setString(3, ablaufdatum);
-                        updateStmt.setString(4, datagroup);
-                        updateStmt.executeUpdate();
-                    }
-                    return ResponseEntity.ok("Menge für Produkt " + name + " wurde um 1 reduziert.");
-                } else {
-                    String deleteQuery = "DELETE FROM products WHERE produktname = ? AND ablaufdatum = ? AND datagroup = ?";
-                    try (PreparedStatement deleteStmt = connection.prepareStatement(deleteQuery)) {
-                        deleteStmt.setString(1, name);
-                        deleteStmt.setString(2, ablaufdatum);
-                        deleteStmt.setString(3, datagroup);
-                        deleteStmt.executeUpdate();
-                    }
-                    return ResponseEntity.ok("Produkt " + name + " wurde entfernt.");
-                }
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PostMapping("/renameProduct")
     public ResponseEntity<String> renameProduct(@RequestParam String oldName, @RequestParam String newName, @RequestParam int id, @RequestParam String token) {
         try {
-            if (userService.checkToken(token, id)) {
+            if (userService.checkToken(token, id))
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Ungültiger Token.");
-            }
             String datagroup = userService.getDatagroup(id);
-            
-            // Prüfen ob das alte Produkt existiert
-            try (Connection connection = dataSource.getConnection()) {
-                String checkGroupQuery = "SELECT * FROM ean_mapping WHERE product_name = ? AND datagroup = ?";
-                PreparedStatement checkOldStmt = connection.prepareStatement(checkGroupQuery);
-                checkOldStmt.setString(1, oldName);
-                checkOldStmt.setString(2, datagroup);
-                ResultSet rsGroup = checkOldStmt.executeQuery();
-                
-                if (rsGroup.next() && rsGroup.getInt(1) == 0) {
-                    String checkPubQuery = "SELECT * FROM ean_mapping WHERE product_name = ? AND datagroup IS NULL";
-                    PreparedStatement checkPubStmt = connection.prepareStatement(checkPubQuery);
-                    checkPubStmt.setString(1, oldName);
-                    ResultSet rsPub = checkPubStmt.executeQuery();
 
-                    if (rsPub.next() && rsPub.getInt(1) == 0) {
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                    }
+            Optional<EanMapping> groupMapping =
+                    eanMappingRepository.findByProductNameAndDatagroup(oldName, datagroup);
 
-                    String createGroupQuery = "INSERT INTO ean_mapping (ean, product_name, datagroup) VALUES (?, ?, ?)";
-                    PreparedStatement createGroupStmt = connection.prepareStatement(createGroupQuery);
-                    createGroupStmt.setString(1, rsPub.getString("ean"));
-                    createGroupStmt.setString(2, newName);
-                    createGroupStmt.setString(3, datagroup);
-                    createGroupStmt.executeUpdate();
-
-                    return ResponseEntity.ok().build();
-                } else {
-                    String updateGroupQuery = "UPDATE ean_mapping SET product_name = ? WHERE product_name = ? AND datagroup = ?";
-                    PreparedStatement updateGroupStmt = connection.prepareStatement(updateGroupQuery);
-                    updateGroupStmt.setString(1, newName);
-                    updateGroupStmt.setString(2, oldName);
-                    updateGroupStmt.setString(3, datagroup);
-                    updateGroupStmt.executeUpdate();
-                }
-                return ResponseEntity.ok().build();
+            if (groupMapping.isPresent()) {
+                EanMapping mapping = groupMapping.get();
+                mapping.setProductName(newName);
+                eanMappingRepository.save(mapping);
+                return ResponseEntity.ok("Produktname erfolgreich geändert.");
             }
-        } catch (SQLException e) {
-            System.out.println("SQL-Fehler beim Umbenennen: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+            Optional<EanMapping> globalMap =
+                    eanMappingRepository.findByProductNameAndDatagroupIsNull(newName);
+
+            if (globalMap.isPresent()) {
+                EanMapping override = new EanMapping();
+                override.setEan(globalMap.get().getEan());
+                override.setProductName(newName);
+                override.setDatagroup(datagroup);
+                eanMappingRepository.save(override);
+                return ResponseEntity.status(HttpStatus.OK).build();
+            }
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             System.out.println("Fehler beim Umbenennen: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY).build();
