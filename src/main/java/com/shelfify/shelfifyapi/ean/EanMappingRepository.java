@@ -16,5 +16,9 @@ public interface EanMappingRepository extends JpaRepository<EanMapping, Long> {
     Optional<EanMapping> findByProductNameAndDatagroup(String name, String datagroup);
 
     Optional<EanMapping> findByProductNameAndDatagroupIsNull(String name);
+
+    List<EanMapping> findAllByDatagroup(String datagroup);
+
+    List<EanMapping> findAllByDatagroupIsNull();
 }
 

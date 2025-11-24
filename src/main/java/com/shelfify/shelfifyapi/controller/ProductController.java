@@ -18,9 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 
 @RestController
 public class ProductController {
@@ -59,14 +57,37 @@ public class ProductController {
                         Sort.by(Sort.Order.asc("ean"), Sort.Order.asc("ablaufdatum"))
                 );
             }
-            for(Products p : products) {
-                String ean = p.getEan();
-                String name = lookupProductName(ean, id, token).getBody();
-                p.setEan(name);
-                System.out.println(p.getEan());
+
+            List<EanMapping> groupMappings = eanMappingRepository.findAllByDatagroup(datagroup);
+            Map<String, String> map = new HashMap<>();
+
+            for (EanMapping m : groupMappings) {
+                map.put(m.getEan(), m.getProductName());
             }
 
-            return ResponseEntity.status(HttpStatus.OK).body(products);
+            List<EanMapping> globalMappings = eanMappingRepository.findAllByDatagroupIsNull();
+
+            for (EanMapping m : globalMappings) {
+                map.putIfAbsent(m.getEan(), m.getProductName());
+            }
+
+            List<Products> result = new ArrayList<>();
+
+            for (Products p : products) {
+                String name = map.getOrDefault(p.getEan(), "Unbekanntes Produkt");
+                Products p1 = new Products(
+                        name,
+                        p.getMenge(),
+                        p.getAblaufdatum(),
+                        p.getDatagroup()
+
+                );
+                System.out.println(p1);
+                result.add(p1);
+            }
+            result.sort(Comparator.comparing(Products::getEan).thenComparing(Products::getAblaufdatum));
+
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             System.out.println("Fehler beim Laden der Produkte: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -149,6 +170,7 @@ public class ProductController {
             Products product = exist.get();
             product.setMenge(product.getMenge() + quantity);
             produktRepository.save(product);
+            
             return ResponseEntity.status(HttpStatus.OK).build();
         }
 

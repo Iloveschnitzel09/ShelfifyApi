@@ -49,7 +49,6 @@ public class DatagroupController {
 
     @PostMapping("/joinDatagroup")
     public ResponseEntity<String> joinDatagroup(@RequestParam int id, @RequestParam String token, @RequestParam String code) {
-        System.out.println("joinDatagroup" + id + " " + token + " " + code);
         String email = userService.getEmail(id);
         if(userService.checkToken(token, id) || notificationRepo.checkBlocked(email, id) || !notificationRepo.checkEmail(email)) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         String datagroup = datagroupService.getDatagroupByCode(code);

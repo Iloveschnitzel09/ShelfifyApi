@@ -23,6 +23,24 @@ public class Products {
 
     private String datagroup;
 
+    @Override
+    public String toString() {
+        return "Products{" +
+                "ean='" + ean + '\'' +
+                ", menge=" + menge +
+                ", ablaufdatum=" + ablaufdatum +
+                ", datagroup='" + datagroup + '\'' +
+                '}';
+    }
+
+    public Products(String name, int menge, LocalDate ablaufdatum, String datagroup) {
+        this.ean = name;
+        this.menge = menge;
+        this.ablaufdatum = ablaufdatum;
+        this.datagroup = datagroup;
+    }
+
+    public Products() {}
     public String getEan() {
         return ean;
     }
