@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.sql.DataSource;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -31,10 +30,6 @@ public class ProductController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private DataSource dataSource;
-
 
     @GetMapping("/products")
     public ResponseEntity<List<Products>> getAllProducts(@RequestParam int id, @RequestParam String token, @RequestParam(defaultValue = "-1") int days) {
@@ -79,7 +74,7 @@ public class ProductController {
                         name,
                         p.getMenge(),
                         p.getAblaufdatum(),
-                        p.getDatagroup()
+                        null
 
                 );
                 System.out.println(p1);
@@ -170,7 +165,7 @@ public class ProductController {
             Products product = exist.get();
             product.setMenge(product.getMenge() + quantity);
             produktRepository.save(product);
-            
+
             return ResponseEntity.status(HttpStatus.OK).build();
         }
 

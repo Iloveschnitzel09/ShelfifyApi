@@ -1,13 +1,15 @@
 package com.shelfify.shelfifyapi.model;
 
-import java.math.BigInteger;
 import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity
 @IdClass(ProductKey.class)
 @Table(name = "products")
