@@ -9,7 +9,7 @@ import java.time.Instant
 
 @Entity
 @Table(name = "invitation_codes")
-class InvitationCodesEntity {
+class InvitationCodeEntity {
     @Id
     var code: String = ""
 

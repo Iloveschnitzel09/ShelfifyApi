@@ -9,7 +9,7 @@ import java.time.LocalDate
 @Entity
 @IdClass(ProductEntityKey::class)
 @Table(name = "products")
-class ProductsEntity {
+class ProductEntity {
     @Id
     var ean: String = ""
 

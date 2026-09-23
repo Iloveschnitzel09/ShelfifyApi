@@ -9,7 +9,7 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "blocked_datagroups")
-class BlockedDatagroupsEntity {
+class BlockedDatagroupEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int = 0
