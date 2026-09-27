@@ -5,4 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface EanMappingRepository : JpaRepository<EanMappingEntity, Int> {
     fun findByEan(ean: String): EanMappingEntity?
+    fun findAllByDatagroup(datagroup: String): List<EanMappingEntity>
 }
