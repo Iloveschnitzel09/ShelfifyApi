@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 data class RefreshRequest(val refreshToken: String)
-data class AuthResponse(val accessToken: String, val refreshToken: String, val id: Int)
+data class AuthResponse(val accessToken: String, val refreshToken: String, val id: Int, val email: String?, val notify: Boolean, val verified: Boolean)
 
 @RestController
 class UserAccController(
@@ -24,7 +24,6 @@ class UserAccController(
     fun appSync(): ResponseEntity<AuthResponse> {
         val datagroup = UUID.randomUUID().toString()
 
-        // 1. User vorerst ohne Refresh Token anlegen
         val newUser = userRepository.save(
             UserEntity(
                 datagroup = datagroup,
@@ -42,13 +41,16 @@ class UserAccController(
             AuthResponse(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
-                id = newUser.id
+                id = newUser.id,
+                email = newUser.email,
+                notify = newUser.notify,
+                verified = newUser.verified
             )
         )
     }
 
     @PostMapping("/refreshToken")
-    fun refreshToken(@RequestBody request: RefreshRequest): ResponseEntity<Map<String, String>> {
+    fun refreshToken(@RequestBody request: RefreshRequest): ResponseEntity<AuthResponse> {
         val token = request.refreshToken
 
         if (!jwtService.isValid(token)) {
@@ -65,6 +67,15 @@ class UserAccController(
 
         val newAccessToken = jwtService.generateAccessToken(userId)
 
-        return ResponseEntity.ok(mapOf("accessToken" to newAccessToken))
+        return ResponseEntity.ok(
+            AuthResponse(
+                accessToken = newAccessToken,
+                refreshToken = token,
+                id = user.id,
+                email = user.email,
+                notify = user.notify,
+                verified = user.verified
+            )
+        )
     }
 }
