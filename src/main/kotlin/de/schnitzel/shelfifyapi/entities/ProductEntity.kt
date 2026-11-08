@@ -9,14 +9,14 @@ import java.time.LocalDate
 @Entity
 @IdClass(ProductEntityKey::class)
 @Table(name = "products")
-class ProductEntity {
+class ProductEntity (
     @Id
-    var ean: String = ""
+    var ean: String = "",
 
-    var menge: Int = 0
+    var menge: Int = 0,
 
     @Id
-    var ablaufdatum: LocalDate = LocalDate.now()
+    var ablaufdatum: LocalDate = LocalDate.now(),
 
     var datagroup: String = ""
-}
+)

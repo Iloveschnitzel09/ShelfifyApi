@@ -7,4 +7,6 @@ import java.time.LocalDate
 interface ProductRepository : JpaRepository<ProductEntity, Int> {
     fun findByDatagroup(datagroup: String): List<ProductEntity>
     fun findByDatagroupAndAblaufdatumBefore(datagroup: String, date: LocalDate): List<ProductEntity>
+    fun findByEanAndDatagroupAndAblaufdatum(ean: String, datagroup: String, date: LocalDate): List<ProductEntity>
+    fun findByEanAndDatagroupOrderByAblaufdatumAsc(ean: String, datagroup: String): List<ProductEntity>
 }
