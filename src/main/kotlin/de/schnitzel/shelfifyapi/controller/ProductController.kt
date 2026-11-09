@@ -9,6 +9,8 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -176,29 +178,35 @@ class ProductController(
         return ResponseEntity.ok().build()
     }
 
-    @PostMapping("/removeProduct")
+    @Transactional
+    @DeleteMapping("/removeProduct")
     fun removeProduct(
         @AuthenticationPrincipal userId: Int,
         @RequestParam ean: String,
         @RequestParam(defaultValue = "1") quantity: Int
-    ) : ResponseEntity<String> {
-        try {
-            val datagroup = userRepository.findById(userId).orElseThrow { Exception("User nicht gefunden") }.datagroup
+    ): ResponseEntity<String> {
+        if (quantity < 1) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
 
-            val products = productRepository.findByEanAndDatagroupOrderByAblaufdatumAsc(ean, datagroup)
-            if (products.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        val datagroup = userRepository.findById(userId).orElseThrow { Exception("User nicht gefunden") }.datagroup
 
-            val oldestProduct = products[0]
+        // Sortiert nach Ablaufdatum: ältestes zuerst
+        val products = productRepository.findByEanAndDatagroupOrderByAblaufdatumAsc(ean, datagroup)
+        if (products.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
 
-            if (oldestProduct.menge > quantity) {
-                oldestProduct.menge -= quantity
-                productRepository.save(oldestProduct)
+        var remaining = quantity
+        for (product in products) {
+            if (remaining <= 0) break
+
+            if (product.menge > remaining) {
+                product.menge -= remaining
+                productRepository.save(product)
+                remaining = 0
             } else {
-                productRepository.delete(oldestProduct)
+                remaining -= product.menge
+                productRepository.delete(product)
             }
-            return ResponseEntity.status(HttpStatus.OK).build()
-        } catch (_: Exception) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
+
+        return ResponseEntity.ok().build()
     }
 }
