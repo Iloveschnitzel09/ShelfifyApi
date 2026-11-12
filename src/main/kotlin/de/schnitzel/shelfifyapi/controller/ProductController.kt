@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import tools.jackson.databind.ObjectMapper
@@ -45,7 +46,7 @@ class ProductController(
 
         val eanDataMap = HashMap<String, String>()
 
-        eanMappingRepository.findAll().forEach { eanDataMap[it.ean] = it.productName }
+        eanMappingRepository.findAllByDatagroupIsNull().forEach { eanDataMap[it.ean] = it.productName }
 
         eanMappingRepository.findAllByDatagroup(datagroup).forEach { eanDataMap[it.ean] = it.productName }
 
@@ -73,7 +74,7 @@ class ProductController(
                 return ResponseEntity.ok(productName)
             }
 
-            val globalProductName = eanMappingRepository.findByEan(ean)?.productName
+            val globalProductName = eanMappingRepository.findByEanAndDatagroupIsNull(ean)?.productName
             if(globalProductName != null) {
                 return ResponseEntity.ok(globalProductName)
             }
@@ -208,5 +209,49 @@ class ProductController(
         }
 
         return ResponseEntity.ok().build()
+    }
+
+    @PutMapping("/renameProduct")
+    fun renameProduct(
+        @AuthenticationPrincipal userId: Int,
+        @RequestParam oldName: String,
+        @RequestParam newName: String
+    ): ResponseEntity<String> {
+        val datagroup = userRepository.findById(userId).orElseThrow { Exception("User nicht gefunden") }.datagroup
+
+        val conflictMapping = eanMappingRepository.findByProductNameAndDatagroup(newName, datagroup)
+        val groupMapping = eanMappingRepository.findByProductNameAndDatagroup(oldName, datagroup)
+
+        if (conflictMapping != null) {
+            if (groupMapping == null || conflictMapping.ean != groupMapping.ean) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build()
+            }
+        }
+
+        if (groupMapping != null) {
+            groupMapping.productName = newName
+            eanMappingRepository.save(groupMapping)
+            return ResponseEntity.ok().build()
+        }
+
+        val globalMapping = eanMappingRepository.findByProductNameAndDatagroupIsNull(oldName)
+        if (globalMapping != null) {
+            eanMappingRepository.save(
+                EanMappingEntity(
+                    ean = globalMapping.ean,
+                    productName = newName,
+                    datagroup = datagroup
+                )
+            )
+            return ResponseEntity.ok().build()
+        }
+        println( "User ID: $userId")
+        println( "Datagroup: $datagroup")
+        println( "Old name: $oldName")
+        println( "New name: $newName")
+        println( "Group mapping: $groupMapping")
+        println( "Global mapping: $globalMapping")
+        
+        return ResponseEntity.notFound().build()
     }
 }
