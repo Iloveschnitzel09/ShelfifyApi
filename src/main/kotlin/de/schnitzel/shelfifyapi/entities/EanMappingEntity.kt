@@ -7,12 +7,12 @@ import jakarta.persistence.Column
 
 @Entity
 @Table(name = "ean_mapping")
-class EanMappingEntity {
+class EanMappingEntity (
     @Id
-    var ean: String = ""
+    var ean: String = "",
 
     @Column(name = "product_name")
-    var productName: String = ""
+    var productName: String = "",
 
     var datagroup: String? = null
-}
+)
