@@ -5,6 +5,9 @@ import de.schnitzel.shelfifyapi.repositories.UserRepository
 import de.schnitzel.shelfifyapi.security.JwtService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -77,5 +80,17 @@ class UserAccController(
                 verified = user.verified
             )
         )
+    }
+    @Transactional
+    @DeleteMapping("/deleteAcc")
+    fun deleteAcc(
+        @AuthenticationPrincipal userId: Int
+    ): ResponseEntity<String> {
+        val user = userRepository.findById(userId).orElse(null)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        userRepository.delete(user)
+
+        return ResponseEntity.ok("Account deleted successfully")
     }
 }
