@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import java.sql.Timestamp
 import java.time.Duration
 import java.time.Instant
 
@@ -40,9 +41,12 @@ class UserAuthController (
             return ResponseEntity.status(HttpStatus.CONFLICT).body("E-Mail ist bereits vergeben")
         }
 
+        val now = Instant.now()
         val pending = pendingRepository.findByUserId(userId) ?: PendingVerificationEntity(userId = userId)
+        val lastRequest = user.lastCodeRequest?.toInstant()
+            ?: if (pending.id != 0) pending.createdAt else null
 
-        if (pending.id != 0 && Duration.between(pending.createdAt, Instant.now()) < RESEND_COOLDOWN) {
+        if (lastRequest != null && Duration.between(lastRequest, now) < RESEND_COOLDOWN) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Bitte warten Sie, bevor Sie einen neuen Code anfordern.")
         }
 
@@ -51,6 +55,9 @@ class UserAuthController (
         pending.createdAt = Instant.now()
         pending.attempts = 0
         pendingRepository.save(pending)
+
+        user.lastCodeRequest = Timestamp.from(now)
+        userRepository.save(user)
 
         emailService.sendVerificationEmail(email, code)
         return ResponseEntity.ok("Email sent successfully.")
@@ -62,7 +69,7 @@ class UserAuthController (
         @AuthenticationPrincipal userId: Int,
         @RequestParam code: String
     ): ResponseEntity<String> {
-        val pending = pendingRepository.findByUserId(userId)
+        val pending = pendingRepository.findWithLockByUserId(userId)
             ?: return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No pending verification found.")
 
         if(Duration.between(pending.createdAt, Instant.now()) > CODE_VALIDITY) {

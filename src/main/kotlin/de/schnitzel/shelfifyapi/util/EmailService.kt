@@ -61,6 +61,10 @@ class EmailService (
         props["mail.transport.protocol"] = "smtp"
         props["mail.smtp.auth"] = "true"
         props["mail.smtp.starttls.enable"] = "true"
+        props["mail.smtp.starttls.required"] = "true"
+        props["mail.smtp.connectiontimeout"] = "10000"
+        props["mail.smtp.timeout"] = "10000"
+        props["mail.smtp.writetimeout"] = "10000"
         props["mail.debug"] = "true"
 
         // TrustManager, der allen Zertifikaten vertraut
