@@ -34,7 +34,7 @@ class UserAuthController (
         @RequestParam email: String
     ): ResponseEntity<String> {
         val code = generateVerificationCode()
-        val user = userRepository.findById(userId).orElseThrow { Exception("User not found") }
+        val user = userRepository.findWithLockById(userId) ?: throw Exception("User not found")
 
         val owner = userRepository.findByEmail(email)
         if (owner != null && owner.id != user.id) {

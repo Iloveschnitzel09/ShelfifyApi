@@ -1,10 +1,12 @@
 package de.schnitzel.shelfifyapi.entities
 
 import jakarta.persistence.*
+import org.hibernate.annotations.DynamicUpdate
 import java.sql.Timestamp
 
 @Entity
 @Table(name = "users")
+@DynamicUpdate
 class UserEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
