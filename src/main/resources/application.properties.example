@@ -1,0 +1,23 @@
+spring.application.name=ShelfifyApi
+spring.datasource.url=jdbc:mariadb://ip-adress:port/database_name
+spring.datasource.username=username
+spring.datasource.password=password
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDBDialect
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+server.port=8080
+
+# Email Konfiguration
+spring.mail.host=mail_host
+spring.mail.port=mail_port
+spring.mail.username=mail@example.com
+spring.mail.password=password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.default-encoding=UTF-8
+
+# Aktiviere Scheduling
+spring.task.scheduling.enabled=true
+
+jwt.secret=secret_key
