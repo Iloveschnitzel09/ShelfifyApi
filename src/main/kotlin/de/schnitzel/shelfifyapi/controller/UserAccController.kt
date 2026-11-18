@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
@@ -53,7 +54,10 @@ class UserAccController(
     }
 
     @PostMapping("/refreshToken")
-    fun refreshToken(@RequestBody request: RefreshRequest): ResponseEntity<AuthResponse> {
+    fun refreshToken(
+        @RequestBody request: RefreshRequest
+    ): ResponseEntity<AuthResponse> {
+
         val token = request.refreshToken
 
         if (!jwtService.isValid(token)) {
@@ -81,6 +85,7 @@ class UserAccController(
             )
         )
     }
+
     @Transactional
     @DeleteMapping("/deleteAcc")
     fun deleteAcc(
@@ -92,5 +97,22 @@ class UserAccController(
         userRepository.delete(user)
 
         return ResponseEntity.ok("Account deleted successfully")
+    }
+
+    @PostMapping("/updateNotify")
+    fun updateNotify(
+        @AuthenticationPrincipal userId: Int,
+        @RequestParam notify: Boolean
+    ): ResponseEntity<String> {
+        val user = userRepository.findById(userId).orElse(null)
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        if (user.verified) {
+            user.notify = notify
+            userRepository.save(user)
+            return ResponseEntity.ok("Notification preference updated successfully")
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
     }
 }
