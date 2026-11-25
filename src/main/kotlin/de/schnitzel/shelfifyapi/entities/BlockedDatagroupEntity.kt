@@ -9,13 +9,13 @@ import jakarta.persistence.Table
 
 @Entity
 @Table(name = "blocked_datagroups")
-class BlockedDatagroupEntity {
+class BlockedDatagroupEntity (
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Int = 0
+    var id: Int = 0,
 
-    var datagroup: String = ""
+    var datagroup: String = "",
 
     @Column(name = "blocked_email")
     var blockedEmail: String = ""
-}
+)
