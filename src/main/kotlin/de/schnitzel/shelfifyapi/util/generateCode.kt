@@ -2,7 +2,7 @@ package de.schnitzel.shelfifyapi.util
 
 import java.security.SecureRandom
 
-fun generateVerificationCode(): String {
+fun generateCode(): String {
     val random = SecureRandom()
     val code = StringBuilder()
     for (i in 0..5) {

@@ -33,6 +33,21 @@ class EmailService (
         sendHtmlMail(email, "Verifizierung deines Kontos", html)
     }
 
+    @Async
+    fun sendInvitationEmail(email: String, code: String) {
+        val html = """
+            <p>Hallo,</p>
+        <p>du wurdest eingeladen, eine Gemeinsame Gruppe zu nutzen.</p>
+        <p>Wenn sie beitreten wollen, geben sie folgenden Einladungscode in der Shelfify-App ein:</p>
+        <p style="font-size:18px; font-style:italic; color:#6E0C19;">$code</p>
+        <p>Wenn Sie diese Einladung nicht angesprochen haben, sollten Sie diese E-Mail einfach ignorieren.</p>
+        <p>Wenn Sie keine Einladungen von dieser Datengruppe mehr erhalten möchten, können Sie sie in der Shelfify-App unter den Gruppen-Einstellungen blockieren. Geben Sie dazu den Code oben ein und tippen Sie auf <b>Gruppe blockieren</b>.</p>
+        <p>Viele Grüße,<br/>Dein Shelfify-Team</p>
+        """.trimIndent()
+
+        sendHtmlMail(email, "Einladung zu Shelfify", html)
+    }
+
     fun sendHtmlMail(to: String, subject: String, html: String) {
         try {
             val mailSender = getMailSender()
