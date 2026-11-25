@@ -129,4 +129,15 @@ class DatagroupController (
         userRepository.save(user)
         return ResponseEntity.ok("Einladung erfolgreich angenommen.")
     }
+
+    @Transactional
+    @PostMapping("/leaveGroup")
+    fun leaveGroup(
+        @AuthenticationPrincipal userId: Int
+    ) : ResponseEntity<String> {
+        val user = userRepository.findWithLockById(userId) ?: throw Exception("User not found")
+        user.datagroup = user.ownDatagroup
+        userRepository.save(user)
+        return ResponseEntity.ok("Gruppe erfolgreich verlassen.")
+    }
 }
