@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 import java.time.Instant
 
+data class GroupMembersResponse(
+    val owner: Boolean,
+    val members: List<String>
+)
+
 @RestController
 class DatagroupController (
     val userRepository: UserRepository,
@@ -139,5 +144,42 @@ class DatagroupController (
         user.datagroup = user.ownDatagroup
         userRepository.save(user)
         return ResponseEntity.ok("Gruppe erfolgreich verlassen.")
+    }
+
+    @PostMapping("/groupMembers")
+    fun getGroupMembers(
+        @AuthenticationPrincipal userId: Int
+    ): ResponseEntity<GroupMembersResponse> {
+        val user = userRepository.findById(userId).orElseThrow { Exception("User not found") }
+        val members = userRepository.findAllByDatagroup(user.datagroup).mapNotNull { it.email }
+        return ResponseEntity.ok(
+            GroupMembersResponse(
+                owner = user.datagroup == user.ownDatagroup,
+                members = members
+            )
+        )
+    }
+
+    @Transactional
+    @PostMapping("/kickMember")
+    fun kickMember(
+        @AuthenticationPrincipal userId: Int,
+        @RequestParam email: String
+    ) : ResponseEntity<String> {
+        val user = userRepository.findWithLockById(userId) ?: throw Exception("User not found")
+        if(user.datagroup != user.ownDatagroup) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Nur der Gruppenbesitzer kann Mitglieder entfernen.")
+        }
+
+        val member = userRepository.findByEmail(email.trim().lowercase())
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Benutzer nicht gefunden.")
+
+        if (member.datagroup != user.datagroup) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Benutzer ist nicht in Ihrer Gruppe.")
+        }
+
+        member.datagroup = member.ownDatagroup
+        userRepository.save(member)
+        return ResponseEntity.ok("Benutzer erfolgreich aus der Gruppe entfernt.")
     }
 }
