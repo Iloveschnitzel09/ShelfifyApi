@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock
 
 interface UserRepository : JpaRepository<UserEntity, Int> {
     fun findByEmail(email: String): UserEntity?
+    fun findAllByDatagroup(datagroup: String): List<UserEntity>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     fun findWithLockById(id: Int): UserEntity?

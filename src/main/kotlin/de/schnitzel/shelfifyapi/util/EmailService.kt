@@ -33,6 +33,20 @@ class EmailService (
         sendHtmlMail(email, "Verifizierung deines Kontos", html)
     }
 
+    fun sendInvitationEmail(email: String, code: String) {
+        val html = """
+            <p>Hallo,</p>
+        <p>du wurdest eingeladen, eine Gemeinsame Gruppe zu nutzen.</p>
+        <p>Wenn sie beitreten wollen, geben sie folgenden Einladungscode in der Shelfify-App ein:</p>
+        <p style="font-size:18px; font-style:italic; color:#6E0C19;">$code</p>
+        <p>Wenn Sie diese Einladung nicht angesprochen haben, sollten Sie diese E-Mail einfach ignorieren.</p>
+        <p>Wenn Sie keine Einladungen von dieser Datengruppe mehr erhalten möchten, können Sie sie in der Shelfify-App unter den Gruppen-Einstellungen blockieren. Geben Sie dazu den Code oben ein und tippen Sie auf <b>Gruppe blockieren</b>.</p>
+        <p>Viele Grüße,<br/>Dein Shelfify-Team</p>
+        """.trimIndent()
+
+        sendHtmlMail(email, "Einladung zu Shelfify", html)
+    }
+
     fun sendHtmlMail(to: String, subject: String, html: String) {
         try {
             val mailSender = getMailSender()
@@ -67,22 +81,7 @@ class EmailService (
         props["mail.smtp.writetimeout"] = "10000"
         props["mail.debug"] = "true"
 
-        // TrustManager, der allen Zertifikaten vertraut
-        val trustAllCerts = arrayOf<TrustManager>(
-            object : X509TrustManager {
-                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-                override fun checkClientTrusted(certs: Array<X509Certificate>?, authType: String?) {}
-                override fun checkServerTrusted(certs: Array<X509Certificate>?, authType: String?) {}
-            }
-        )
-
-        // all-trusting TrustManager installieren
-        val sc = SSLContext.getInstance("SSL")
-        sc.init(null, trustAllCerts, SecureRandom())
-
-        props["mail.smtp.ssl.trust"] = "*"
-        props["mail.smtp.ssl.socketFactory"] = sc.socketFactory
-        props["mail.smtp.ssl.socketFactory.class"] = "javax.net.ssl.SSLSocketFactory"
+        props["mail.smtp.ssl.checkserveridentity"] = "true"
 
         return mailSender
     }

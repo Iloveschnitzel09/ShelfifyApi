@@ -4,6 +4,9 @@ spring.datasource.url=jdbc:mariadb://ip-adress:port/database_name?sslMode=verify
 spring.datasource.username=username
 spring.datasource.password=password
 spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+spring.datasource.hikari.max-lifetime=600000
+spring.datasource.hikari.keepalive-time=120000
+spring.datasource.hikari.validation-timeout=3000
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDBDialect
 spring.jpa.hibernate.ddl-auto=none
 spring.jpa.show-sql=true

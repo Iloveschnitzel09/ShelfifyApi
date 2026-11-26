@@ -4,7 +4,7 @@ import de.schnitzel.shelfifyapi.entities.PendingVerificationEntity
 import de.schnitzel.shelfifyapi.repositories.PendingVerificationRepository
 import de.schnitzel.shelfifyapi.repositories.UserRepository
 import de.schnitzel.shelfifyapi.util.EmailService
-import de.schnitzel.shelfifyapi.util.generateVerificationCode
+import de.schnitzel.shelfifyapi.util.generateCode
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -33,7 +33,7 @@ class UserAuthController (
         @AuthenticationPrincipal userId: Int,
         @RequestParam email: String
     ): ResponseEntity<String> {
-        val code = generateVerificationCode()
+        val code = generateCode()
         val user = userRepository.findWithLockById(userId) ?: throw Exception("User not found")
 
         val owner = userRepository.findByEmail(email)
