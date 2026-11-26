@@ -34,6 +34,7 @@ class DatagroupController (
         private val CODE_VALIDITY: Duration = Duration.ofMinutes(5)
         private val INVITE_COOLDOWN: Duration = Duration.ofMinutes(5)
         private const val MAX_OPEN_INVITES = 3L
+        private const val MAX_CODE_ATTEMPTS = 5
     }
 
     @Transactional
@@ -71,7 +72,7 @@ class DatagroupController (
                 .body("Es sind bereits $MAX_OPEN_INVITES Einladungen offen. Bitte warte, bis eine angenommen wurde oder abläuft.")
         }
 
-        val code = generateCode()
+        val code = generateUniqueCode()
 
         invitationCodeRepository.save(
             InvitationCodeEntity(
@@ -82,7 +83,14 @@ class DatagroupController (
             )
         )
 
-        emailService.sendInvitationEmail(invitee, code)
+        try {
+            emailService.sendInvitationEmail(invitee, code)
+        } catch (e: Exception) {
+            print("Einladungs-E-Mail konnte nicht gesendet werden $e")
+            invitationCodeRepository.deleteById(code.toInt())
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body("Die Einladung konnte nicht per E-Mail gesendet werden. Bitte versuche es später erneut.")
+        }
         return ResponseEntity.ok("Einladung erfolgreich gesendet.")
     }
 
@@ -97,8 +105,10 @@ class DatagroupController (
         val invitation = invitationCodeRepository.findByCode(code.trim())
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Einladungscode nicht gefunden.")
 
-        val inviteMail = invitation.invitedEmail!!
-        if (invitation.invitedEmail == null || !inviteMail.equals(user.email, ignoreCase = true)) {
+        val inviteMail = invitation.invitedEmail
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Einladungscode nicht gefunden.")
+
+        if (!inviteMail.equals(user.email, ignoreCase = true)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Einladungscode nicht gefunden.")
         }
 
@@ -126,12 +136,19 @@ class DatagroupController (
         val invitation = invitationCodeRepository.findByCode(code.trim())
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Einladungscode nicht gefunden.")
 
-        if(user.email != invitation.invitedEmail) {
+        val invitedEmail = invitation.invitedEmail
+        if (invitedEmail == null || !invitedEmail.equals(user.email, ignoreCase = true)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sie sind nicht der Empfänger dieser Einladung.")
+        }
+
+        if (invitation.createdAt.isBefore(Instant.now().minus(CODE_VALIDITY))) {
+            return ResponseEntity.status(HttpStatus.GONE).body("Der Einladungscode ist abgelaufen.")
         }
 
         user.datagroup = invitation.datagroup
         userRepository.save(user)
+
+        invitationCodeRepository.delete(invitation)
         return ResponseEntity.ok("Einladung erfolgreich angenommen.")
     }
 
@@ -171,7 +188,10 @@ class DatagroupController (
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Nur der Gruppenbesitzer kann Mitglieder entfernen.")
         }
 
-        val member = userRepository.findByEmail(email.trim().lowercase())
+        val target = userRepository.findByEmail(email.trim().lowercase())
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Benutzer nicht gefunden.")
+
+        val member = userRepository.findWithLockById(target.id)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Benutzer nicht gefunden.")
 
         if (member.datagroup != user.datagroup) {
@@ -181,5 +201,15 @@ class DatagroupController (
         member.datagroup = member.ownDatagroup
         userRepository.save(member)
         return ResponseEntity.ok("Benutzer erfolgreich aus der Gruppe entfernt.")
+    }
+
+    private fun generateUniqueCode(): String {
+        repeat(MAX_CODE_ATTEMPTS) {
+            val candidate = generateCode()
+            if (!invitationCodeRepository.existsById(candidate.toInt())) {
+                return candidate
+            }
+        }
+        throw IllegalStateException("Es konnte kein eindeutiger Einladungscode erzeugt werden.")
     }
 }

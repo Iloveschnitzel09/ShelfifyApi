@@ -33,7 +33,6 @@ class EmailService (
         sendHtmlMail(email, "Verifizierung deines Kontos", html)
     }
 
-    @Async
     fun sendInvitationEmail(email: String, code: String) {
         val html = """
             <p>Hallo,</p>
@@ -82,22 +81,7 @@ class EmailService (
         props["mail.smtp.writetimeout"] = "10000"
         props["mail.debug"] = "true"
 
-        // TrustManager, der allen Zertifikaten vertraut
-        val trustAllCerts = arrayOf<TrustManager>(
-            object : X509TrustManager {
-                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-                override fun checkClientTrusted(certs: Array<X509Certificate>?, authType: String?) {}
-                override fun checkServerTrusted(certs: Array<X509Certificate>?, authType: String?) {}
-            }
-        )
-
-        // all-trusting TrustManager installieren
-        val sc = SSLContext.getInstance("SSL")
-        sc.init(null, trustAllCerts, SecureRandom())
-
-        props["mail.smtp.ssl.trust"] = "*"
-        props["mail.smtp.ssl.socketFactory"] = sc.socketFactory
-        props["mail.smtp.ssl.socketFactory.class"] = "javax.net.ssl.SSLSocketFactory"
+        props["mail.smtp.ssl.checkserveridentity"] = "true"
 
         return mailSender
     }
